@@ -1,0 +1,14 @@
+{
+    "paper_api_key": "PK6WGQ1PQV0H8VPY3A1C",
+    "paper_secret_key": "O9xCtz4JBH8NmsfX8b9ZdiTfP0e4zjdv5hw77Uyb",
+    "live_api_key": "",
+    "live_secret_key": "",
+    "mode": "paper",
+    "initial_amount": 10000.0,
+    "currency": "USD",
+    "auto_trading_enabled": false,
+    "take_profit_percent": 0.5,
+    "stop_loss_percent": 3.0,
+    "auto_sell_time": "21:50",
+    "investment_percent": 10.0
+}
