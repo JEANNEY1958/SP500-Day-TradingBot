@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 
 // Configuration de l'URL de l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || '`${API_BASE_URL}`';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://sp500-day-tradingbot.onrender.com"; // Utilise des guillemets simples ou doubles, pas de template string ici
 
 /*
 FICHIER À COPIER/COLLER : sp500-dashboard/src/App.js
@@ -226,7 +226,8 @@ function App() {
 
   // ===== ÉTATS POUR L'ENVOI AUTOMATIQUE (SIMPLIFIÉ) =====
   const [lastProcessedRecommendation, setLastProcessedRecommendation] = useState(null);
-  const [autoSendLogs, setAutoSendLogs] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+const [autoSendLogs, setAutoSendLogs] = useState([]);
 
   // ===== NOUVEAUX ÉTATS POUR LE TRADING ALPACA =====
   const [tradingStatus, setTradingStatus] = useState({
