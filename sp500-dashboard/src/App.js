@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 
+// Configuration de l'URL de l'API
+const API_BASE_URL = process.env.REACT_APP_API_URL || '`${API_BASE_URL}`';
+
 /*
 FICHIER À COPIER/COLLER : sp500-dashboard/src/App.js
 Interface React modifiée avec modes manuel/automatique et timers réglables + Trading Alpaca
@@ -109,16 +112,18 @@ const getNthWeekdayOfMonth = (year, month, weekday, n) => {
 const getLastWeekdayOfMonth = (year, month, weekday) => {
   const lastDay = new Date(year, month + 1, 0);
   const lastWeekday = lastDay.getDay();
-  const daysToSubtract = (lastWeekday - weekday + 7) % 7;
-  const targetDate = new Date(year, month + 1, 0 - daysToSubtract);
-  return `${year}-${String(month + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+  // Correction : s'assurer que la date ne devient pas négative
+  let day = lastDay.getDate() - ((lastWeekday - weekday + 7) % 7);
+  if (day <= 0) day += 7;
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 };
 
 // Fonction pour calculer le Vendredi Saint (Good Friday)
 const getGoodFriday = (year) => {
   const easter = getEasterDate(year);
-  const goodFriday = new Date(easter);
-  goodFriday.setDate(easter.getDate() - 2); // 2 jours avant Pâques
+  // Ne pas muter l'objet Date easter, créer une nouvelle date
+  const goodFriday = new Date(easter.getTime());
+  goodFriday.setDate(goodFriday.getDate() - 2); // 2 jours avant Pâques
   return `${goodFriday.getFullYear()}-${String(goodFriday.getMonth() + 1).padStart(2, '0')}-${String(goodFriday.getDate()).padStart(2, '0')}`;
 };
 
@@ -144,8 +149,12 @@ const getEasterDate = (year) => {
 // ===== FONCTIONS POUR LE MONTANT INITIAL UNIQUEMENT =====
 const saveInitialAmountToStorage = (amount) => {
   try {
-    localStorage.setItem('trading_initial_amount', amount.toString());
-    console.log('Montant initial sauvegardé:', amount);
+    if (!isNaN(amount) && amount !== null && amount !== undefined) {
+      localStorage.setItem('trading_initial_amount', amount.toString());
+      console.log('Montant initial sauvegardé:', amount);
+    } else {
+      throw new Error('Montant invalide');
+    }
   } catch (error) {
     console.error('Erreur sauvegarde localStorage:', error);
   }
@@ -154,7 +163,7 @@ const saveInitialAmountToStorage = (amount) => {
 const getInitialAmountFromStorage = () => {
   try {
     const saved = localStorage.getItem('trading_initial_amount');
-    const amount = saved ? parseFloat(saved) : 10000;
+    const amount = saved && !isNaN(parseFloat(saved)) ? parseFloat(saved) : 10000;
     console.log('Montant initial récupéré:', amount);
     return amount;
   } catch (error) {
@@ -272,7 +281,7 @@ function App() {
   // Fonction pour récupérer le statut du système - stabilisée avec useCallback
   const fetchSystemStatus = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/status');
+      const response = await fetch(`${API_BASE_URL}/api/status`);
       const data = await response.json();
       setSystemStatus(data);
       
@@ -296,7 +305,7 @@ function App() {
   // ===== NOUVELLES FONCTIONS POUR LE TRADING ALPACA =====
   const fetchTradingStatus = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/trading/status');
+      const response = await fetch(`${API_BASE_URL}/api/trading/status`);
       const data = await response.json();
       
       if (data.success) {
@@ -327,7 +336,7 @@ function App() {
 
   const fetchPortfolio = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/trading/portfolio');
+      const response = await fetch(`${API_BASE_URL}/api/trading/portfolio`);
       const data = await response.json();
       
       if (data.success && data.portfolio) {
@@ -340,7 +349,7 @@ function App() {
 
   const configureTradingAPI = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/trading/configure', {
+      const response = await fetch(`${API_BASE_URL}/api/trading/configure`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tradingConfig)
@@ -364,7 +373,7 @@ function App() {
  // Fonction de sauvegarde automatique des paramètres de trading
 const autoSaveTradingConfig = useCallback(async (configToSave) => {
   try {
-    const response = await fetch('http://localhost:5000/api/trading/config', {
+    const response = await fetch(`${API_BASE_URL}/api/trading/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -390,7 +399,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
 
   const updateTradingConfig = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/trading/config', {
+      const response = await fetch(`${API_BASE_URL}/api/trading/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -419,7 +428,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
 
   const placeManualOrder = async (side) => {
     try {
-      const response = await fetch('http://localhost:5000/api/trading/order', {
+      const response = await fetch(`${API_BASE_URL}/api/trading/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -464,7 +473,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
         });
       }
       
-      const response = await fetch('http://localhost:5000/api/trading/auto/start', {
+      const response = await fetch(`${API_BASE_URL}/api/trading/auto/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -512,7 +521,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
 
   const stopAutoTrading = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/trading/auto/stop', {
+      const response = await fetch(`${API_BASE_URL}/api/trading/auto/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -581,7 +590,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
     try {
       console.log(`🚀 Envoi automatique vers trading: ${recommendation.symbol}`);
       
-      const response = await fetch('http://localhost:5000/api/trading/auto/start', {
+      const response = await fetch(`${API_BASE_URL}/api/trading/auto/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol: recommendation.symbol })
@@ -627,7 +636,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour récupérer le Top 10 - stabilisée avec useCallback
   const fetchTop10 = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/get-top-10');
+      const response = await fetch(`${API_BASE_URL}/api/get-top-10`);
       const data = await response.json();
       
       if (data.success) {
@@ -641,7 +650,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour récupérer la recommandation finale - stabilisée avec useCallback
   const fetchFinalRecommendation = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/get-final-recommendation');
+      const response = await fetch(`${API_BASE_URL}/api/get-final-recommendation`);
       const data = await response.json();
       
       if (data.success) {
@@ -656,7 +665,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   const startAnalysis500 = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/start-analysis-500', {
+      const response = await fetch(`${API_BASE_URL}/api/start-analysis-500`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -678,7 +687,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   const startAnalysis10 = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/start-analysis-10', {
+      const response = await fetch(`${API_BASE_URL}/api/start-analysis-10`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -699,7 +708,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour arrêter l'analyse
   const stopAnalysis = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/stop-analysis', {
+      const response = await fetch(`${API_BASE_URL}/api/stop-analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -719,7 +728,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   const refreshCache = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch('http://localhost:5000/api/refresh-cache', {
+      const response = await fetch(`${API_BASE_URL}/api/refresh-cache`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -749,7 +758,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour obtenir les informations du cache
   const fetchCacheInfo = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/cache-info');
+      const response = await fetch(`${API_BASE_URL}/api/cache-info`);
       const data = await response.json();
       if (data.success) {
         setCacheInfo(data.cache_status);
@@ -763,7 +772,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   const configureMode = async () => {
     isConfiguring.current = true;
     try {
-      const response = await fetch('http://localhost:5000/api/set-mode', {
+      const response = await fetch(`${API_BASE_URL}/api/set-mode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -841,7 +850,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour récupérer le statut du mode analyse automatique seuil
   const fetchAutoThresholdStatus = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auto-threshold/status');
+      const response = await fetch(`${API_BASE_URL}/api/auto-threshold/status`);
       const data = await response.json();
       
       if (data.success) {
@@ -877,7 +886,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
         }
       };
 
-      const response = await fetch('http://localhost:5000/api/set-mode-extended', {
+      const response = await fetch(`${API_BASE_URL}/api/set-mode-extended`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -906,7 +915,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour démarrer le mode analyse automatique seuil
   const startAutoThreshold = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auto-threshold/start', {
+      const response = await fetch(`${API_BASE_URL}/api/auto-threshold/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -927,7 +936,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
   // Fonction pour arrêter le mode analyse automatique seuil
   const stopAutoThreshold = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auto-threshold/stop', {
+      const response = await fetch(`${API_BASE_URL}/api/auto-threshold/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -2074,6 +2083,9 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
 }
 
 export default App;
+
+
+
 
 
 

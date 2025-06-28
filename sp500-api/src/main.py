@@ -95,9 +95,10 @@ app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 CORS(app, origins=[
     'http://localhost:3000',  # Pour le développement local
     'http://localhost:3001',  # Pour le développement local
-    'https://*.netlify.app',  # Pour votre frontend Netlify
-    'https://*.netlify.com'   # Alternative Netlify
-] )
+    'https://sensational-pavlova-7f2b18.netlify.app',  # Votre URL Netlify réelle
+    'https://sp500-day-tradingbot-dashboard.netlify.app',  # URL alternative
+    'https://main--sp500-day-tradingbot-dashboard.netlify.app'  # URL de branche
+], supports_credentials=True )
 
 # Instance globale de l'orchestrateur équitable V3 (si disponible)
 if EQUITABLE_SYSTEM_AVAILABLE:
