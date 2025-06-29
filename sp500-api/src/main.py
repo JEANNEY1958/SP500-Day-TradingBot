@@ -10,17 +10,15 @@ from flask_cors import CORS
 import pandas as pd
 import os
 import sys
-import asyncio
+import schedule
 import threading
+import time
 from datetime import datetime, timedelta
 import yfinance as yf
 import numpy as np
 from textblob import TextBlob
 import requests
 import warnings
-import time
-import schedule
-from threading import Timer
 import json
 
 # AJOUT DES IMPORTS POUR LE NOUVEAU SYSTÈME ÉQUITABLE
@@ -1090,6 +1088,54 @@ def run_equitable_analysis_10():
 
 # ===== FONCTIONS UTILITAIRES =====
 
+# ===== VIDAGE QUOTIDIEN AUTOMATIQUE DU CACHE =====
+def daily_cache_cleanup():
+    """
+    Vidage quotidien automatique du cache à minuit US
+    Timing parfait : après market fermé, avant pre-market
+    Une seule opération par jour en mode auto
+    """
+    try:
+        print("🌙 VIDAGE QUOTIDIEN AUTOMATIQUE - Minuit US")
+        print(f"   Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        # Utiliser la fonction existante de réinitialisation
+        reset_analysis_data()
+        print("✅ Cache vidé avec succès - Prêt pour le trading de demain")
+        # Log pour traçabilité (optionnel)
+        try:
+            with open('cache_cleanup.log', 'a') as f:
+                f.write(f"{datetime.now().isoformat()} - Cache vidé automatiquement\n")
+        except:
+            pass  # Ignore les erreurs de log
+    except Exception as e:
+        print(f"❌ Erreur lors du vidage quotidien: {e}")
+        try:
+            with open('cache_cleanup.log', 'a') as f:
+                f.write(f"{datetime.now().isoformat()} - ERREUR: {e}\n")
+        except:
+            pass
+
+def setup_daily_cache_cleanup():
+    """Configure le vidage quotidien à minuit US (EST)"""
+    try:
+        # Programmer pour minuit heure US (EST)
+        schedule.every().day.at("00:00").do(daily_cache_cleanup)
+        print("📅 Vidage quotidien programmé à minuit US (EST)")
+        # Démarrer le scheduler dans un thread séparé
+        def run_scheduler():
+            while True:
+                try:
+                    schedule.run_pending()
+                    time.sleep(60)  # Vérifier chaque minute
+                except Exception as e:
+                    print(f"⚠️ Erreur scheduler: {e}")
+                    time.sleep(300)  # Attendre 5 min en cas d'erreur
+        scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+        scheduler_thread.start()
+        print("🚀 Scheduler de vidage quotidien démarré")
+    except Exception as e:
+        print(f"❌ Erreur configuration scheduler: {e}")
+
 def reset_analysis_data():
     """Réinitialise les données d'analyse en mémoire"""
     global system_status
@@ -1896,6 +1942,42 @@ def trigger_immediate_buy():
         return jsonify({'success': False, 'message': str(e)})
 
 # ===== ENDPOINTS DE GESTION DU CACHE (CONSERVÉS) =====
+
+@app.route('/api/cache-schedule-status', methods=['GET'])
+def cache_schedule_status():
+    """Vérifie le statut du vidage automatique quotidien"""
+    try:
+        jobs = schedule.get_jobs()
+        cache_jobs = [job for job in jobs if 'daily_cache_cleanup' in str(job.job_func)]
+        return jsonify({
+            'success': True,
+            'scheduled_jobs': len(cache_jobs),
+            'next_run': str(cache_jobs[0].next_run) if cache_jobs else None,
+            'status': 'active' if cache_jobs else 'inactive',
+            'timezone': 'US Eastern (EST)',
+            'description': 'Vidage automatique à minuit US - après market, avant pre-market'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erreur: {str(e)}'
+        })
+
+@app.route('/api/trigger-cache-cleanup', methods=['POST'])
+def trigger_cache_cleanup():
+    """Déclenche manuellement le vidage du cache (pour test)"""
+    try:
+        daily_cache_cleanup()
+        return jsonify({
+            'success': True,
+            'message': 'Vidage du cache déclenché manuellement',
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erreur: {str(e)}'
+        })
 
 @app.route('/api/refresh-cache', methods=['POST'])
 def refresh_cache():
