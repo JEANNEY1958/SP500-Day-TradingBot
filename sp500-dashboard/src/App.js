@@ -1361,6 +1361,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
                         // Sélectionner tout le texte au focus pour faciliter la saisie
                         e.target.select();
                       }}
+                      step="0.01"
                       placeholder="Saisissez le montant initial"
                     />
                     <small style={{ color: '#4CAF50' }}>💾 Sauvegarde automatique - Vous pouvez vider le champ</small>
