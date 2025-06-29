@@ -1338,7 +1338,7 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
                   <div className="setting-group">
                     <label>Montant initial du portefeuille :</label>
                     <input 
-                      type="text" 
+                      type="number" 
                       value={getInitialAmountFromStorage()} 
                       onChange={(e) => {
                         const inputValue = e.target.value;
