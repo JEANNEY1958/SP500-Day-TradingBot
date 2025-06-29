@@ -1,8 +1,36 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
+import Alpaca from '@alpacahq/alpaca-trade-api';
 
 // Configuration de l'URL de l'API
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://sp500-day-tradingbot.onrender.com"; // Utilise des guillemets simples ou doubles, pas de template string ici
+
+// === CONFIGURATION ALPACA ===
+// Remplacez ces valeurs par vos vraies clés ou utilisez un formulaire sécurisé côté interface
+const ALPACA_KEY = process.env.REACT_APP_ALPACA_KEY || '';
+const ALPACA_SECRET = process.env.REACT_APP_ALPACA_SECRET || '';
+const ALPACA_PAPER = true; // ou false si live
+
+// Création de l'instance Alpaca (sera utilisée plus loin si besoin)
+const alpaca = new Alpaca({
+  keyId: ALPACA_KEY,
+  secretKey: ALPACA_SECRET,
+  paper: ALPACA_PAPER,
+  usePolygon: false
+});
+
+// Test de connexion Alpaca au démarrage (affiche dans la console le compte ou l'erreur)
+useEffect(() => {
+  if (ALPACA_KEY && ALPACA_SECRET) {
+    alpaca.getAccount().then(account => {
+      console.log('Alpaca API connecté. Compte:', account);
+    }).catch(error => {
+      console.error('Erreur de connexion à Alpaca:', error.message || error);
+    });
+  } else {
+    console.warn('Clés Alpaca non définies dans les variables d\'environnement.');
+  }
+}, []);
 
 /*
 FICHIER À COPIER/COLLER : sp500-dashboard/src/App.js
@@ -276,8 +304,8 @@ const [autoSendLogs, setAutoSendLogs] = useState([]);
   const [isEditingTradingConfig, setIsEditingTradingConfig] = useState(false);
   const editingTimeoutRef = useRef(null);
   
-  // État local pour la valeur en cours de saisie du montant initial - SUPPRIMÉ car non utilisé
-  // const [localInitialAmount, setLocalInitialAmount] = useState('');
+  // État local pour la valeur en cours de saisie du montant initial
+  const [localInitialAmount, setLocalInitialAmount] = useState('');
 
   // Fonction pour récupérer le statut du système - stabilisée avec useCallback
   const fetchSystemStatus = useCallback(async () => {
@@ -991,6 +1019,11 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Effet pour initialiser la valeur locale du montant initial
+  useEffect(() => {
+    setLocalInitialAmount(getInitialAmountFromStorage().toString());
+  }, []);
+
   // Effet pour récupérer les informations du cache au démarrage
   useEffect(() => {
     fetchCacheInfo();
@@ -1339,23 +1372,28 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
                     <label>Montant initial du portefeuille :</label>
                     <input 
                       type="number" 
-                      value={getInitialAmountFromStorage()} 
+                      value={localInitialAmount}
                       onChange={(e) => {
                         const inputValue = e.target.value;
-                        
+                        // Mettre à jour l'état local immédiatement pour une saisie fluide
+                        setLocalInitialAmount(inputValue);
                         // Permettre la saisie vide
                         if (inputValue === '' || inputValue === null) {
                           saveInitialAmountToStorage(0);
                           setTradingConfig(prev => ({ ...prev, initial_amount: 0 }));
                           return;
                         }
-                        
                         // Traiter la valeur numérique
                         const value = parseFloat(inputValue.replace(',', '.'));
                         if (!isNaN(value) && value >= 0) {
                           saveInitialAmountToStorage(value);
                           setTradingConfig(prev => ({ ...prev, initial_amount: value }));
                         }
+                      }}
+                      onBlur={() => {
+                        // Synchroniser avec la valeur sauvegardée en cas de valeur invalide
+                        const savedValue = getInitialAmountFromStorage();
+                        setLocalInitialAmount(savedValue.toString());
                       }}
                       onFocus={(e) => {
                         // Sélectionner tout le texte au focus pour faciliter la saisie
