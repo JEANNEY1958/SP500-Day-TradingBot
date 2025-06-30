@@ -35,10 +35,10 @@ class ScheduleManager:
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
         """
-        Ajoute une tâche programmée
+        Ajoute une tâche programmée (heure locale Europe/Paris, programmation réelle en UTC)
         
         Args:
-            time_str (str): Heure au format "HH:MM"
+            time_str (str): Heure au format "HH:MM" (heure locale Europe/Paris)
             callback (Callable): Fonction à exécuter
             job_id (str): Identifiant unique de la tâche
             weekdays_only (bool): Exécuter seulement les jours de semaine
@@ -57,7 +57,51 @@ class ScheduleManager:
             if job_id in self.scheduled_jobs:
                 self.remove_schedule(job_id)
             
-            # Créer la nouvelle tâche
+            # Conversion locale -> UTC pour la programmation réelle
+            tz_local = pytz.timezone(self.timezone)
+            now_local = datetime.now(tz_local)
+            hour, minute = map(int, time_str.split(':'))
+            local_time = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            # Si l'heure est déjà passée aujourd'hui, prendre le lendemain
+            if local_time <= now_local:
+                local_time += timedelta(days=1)
+            # Conversion en UTC
+            utc_time = local_time.astimezone(pytz.utc)
+            time_str_utc = utc_time.strftime('%H:%M')
+            
+            job_config = {
+                'time_str': time_str,
+                'callback': callback,
+                'weekdays_only': weekdays_only,
+                'enabled': enabled,
+                'job': None,
+                'last_run': None,
+                'next_run': None
+            }
+            
+            # Programmer la tâche en UTC
+            if weekdays_only:
+                job = schedule.every().monday.at(time_str_utc).do(self._execute_job, job_id)
+                schedule.every().tuesday.at(time_str_utc).do(self._execute_job, job_id)
+                schedule.every().wednesday.at(time_str_utc).do(self._execute_job, job_id)
+                schedule.every().thursday.at(time_str_utc).do(self._execute_job, job_id)
+                schedule.every().friday.at(time_str_utc).do(self._execute_job, job_id)
+            else:
+                job = schedule.every().day.at(time_str_utc).do(self._execute_job, job_id)
+            
+            job_config['job'] = job
+            job_config['next_run'] = self._calculate_next_run(time_str, weekdays_only)
+            
+            self.scheduled_jobs[job_id] = job_config
+            
+            # Afficher l'heure locale et UTC pour clarté
+            self.logger.info(f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC) -> Programmation effective à {time_str_utc} UTC")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Erreur lors de l'ajout de la tâche {job_id}: {e}")
+            return False
+
             job_config = {
                 'time_str': time_str,
                 'callback': callback,
