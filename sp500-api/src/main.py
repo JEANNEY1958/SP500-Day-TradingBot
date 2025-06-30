@@ -654,24 +654,22 @@ def analyze_news_sentiment(symbol):
 
 # ===== FONCTIONS DE PLANIFICATION AUTOMATIQUE (CONSERVÉES) =====
 
-def convert_europe_paris_time_to_local(schedule_time_str):
+def convert_europe_paris_time_to_utc(schedule_time_str):
     """
-    Convertit une heure Europe/Paris ("HH:MM") en heure locale du serveur ("HH:MM").
+    Convertit une heure Europe/Paris ("HH:MM") en heure UTC ("HH:MM").
     """
     import pytz
-    from datetime import datetime
+    from datetime import datetime, timedelta
     europe_paris = pytz.timezone('Europe/Paris')
-    # Utilise le fuseau local du serveur
-    try:
-        import tzlocal
-        local_tz = tzlocal.get_localzone()
-    except ImportError:
-        import time
-        local_tz = pytz.timezone(time.tzname[0])
+    utc = pytz.utc
     now_paris = datetime.now(europe_paris)
     target_paris = europe_paris.localize(datetime.combine(now_paris.date(), datetime.strptime(schedule_time_str, "%H:%M").time()))
-    target_local = target_paris.astimezone(local_tz)
-    return target_local.strftime("%H:%M")
+    # Si l'heure est déjà passée aujourd'hui, prendre demain
+    if target_paris < now_paris:
+        target_paris += timedelta(days=1)
+    target_utc = target_paris.astimezone(utc)
+    return target_utc.strftime("%H:%M")
+
 
 
 def start_auto_schedule_500():
@@ -692,9 +690,9 @@ def start_auto_schedule_500():
                 print("❌ Impossible de démarrer l'analyse 500 automatiquement")
         
         # Programmer l'exécution quotidienne à l'heure locale correspondante
-        schedule.every().day.at(schedule_time_local).do(auto_start_500)
+        schedule.every().day.at(schedule_time_utc).do(auto_start_500)
         schedule_job_500 = True
-        print(f"📅 Analyse 500 tickers programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_local} (local serveur)")
+        print(f"📅 Analyse 500 tickers programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_utc} (UTC)")
 
 
 def start_auto_schedule_10():
@@ -719,9 +717,9 @@ def start_auto_schedule_10():
                 print("❌ Pas de Top 10 disponible pour l'analyse automatique")
         
         # Programmer l'exécution quotidienne à l'heure locale correspondante
-        schedule.every().day.at(schedule_time_local).do(auto_start_10)
+        schedule.every().day.at(schedule_time_utc).do(auto_start_10)
         schedule_job_10 = True
-        print(f"📅 Analyse 10 finalistes programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_local} (local serveur)")
+        print(f"📅 Analyse 10 finalistes programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_utc} (UTC)")
 
 
 def start_auto_schedule_sequence():
