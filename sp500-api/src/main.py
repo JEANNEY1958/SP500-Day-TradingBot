@@ -7,6 +7,33 @@ FICHIER À COPIER/COLLER : sp500-api/src/main.py
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+# Création de l'app Flask
+app = Flask(__name__)
+CORS(app)
+
+# Fonction pour relancer la planification automatique au démarrage (après crash/reboot Render)
+def auto_start_schedulers_on_boot():
+    try:
+        # Redémarrer la séquence classique si activée
+        if system_status.get('mode') == 'auto' and (
+            system_status.get('schedule_500_enabled') or system_status.get('schedule_10_enabled')
+        ):
+            print("🟢 Redémarrage auto de la séquence de planification à l'initialisation (Render)")
+            start_auto_schedule_sequence()
+        # Redémarrer le gestionnaire d'horaires seuil si activé
+        if auto_schedule_config.get('enabled') and auto_schedule_config.get('threshold_time'):
+            print("🟢 Redémarrage auto du gestionnaire d'horaires seuil à l'initialisation (Render)")
+            try:
+                schedule_manager.start_scheduler()
+            except Exception as e:
+                print(f"❌ Erreur redémarrage gestionnaire d'horaires: {e}")
+    except Exception as ex:
+        print(f"❌ Erreur auto_start_schedulers_on_boot: {ex}")
+
+# Appel immédiat après création de l'app Flask
+auto_start_schedulers_on_boot()
+
 import pandas as pd
 import os
 import sys
