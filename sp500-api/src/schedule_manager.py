@@ -61,10 +61,17 @@ class ScheduleManager:
             tz_local = pytz.timezone(self.timezone)
             now_local = datetime.now(tz_local)
             hour, minute = map(int, time_str.split(':'))
+            # Prochaine occurrence de l'heure locale demandée (aujourd'hui ou demain)
             local_time = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
-            # Si l'heure est déjà passée aujourd'hui, prendre le lendemain
             if local_time <= now_local:
-                local_time += timedelta(days=1)
+                # Si on est juste avant l'heure (moins d'une minute), on prend aujourd'hui
+                delta_seconds = (local_time - now_local).total_seconds()
+                if 0 > delta_seconds >= -60:
+                    # On est dans la minute qui précède, on garde aujourd'hui
+                    pass
+                else:
+                    # Sinon, on prend le lendemain
+                    local_time += timedelta(days=1)
             # Conversion en UTC
             utc_time = local_time.astimezone(pytz.utc)
             time_str_utc = utc_time.strftime('%H:%M')
@@ -269,10 +276,14 @@ class ScheduleManager:
                 self.logger.info(f"Tâche désactivée, ignorée: {job_id}")
                 return
             
+            # Log détaillé du déclenchement effectif
+            now_local = datetime.now(pytz.timezone(self.timezone))
+            now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+            self.logger.info(f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             self.logger.info(f"Exécution de la tâche programmée: {job_id}")
             
             # Mettre à jour l'heure de dernière exécution
-            job_config['last_run'] = datetime.now()
+            job_config['last_run'] = now_local
             job_config['next_run'] = self._calculate_next_run(
                 job_config['time_str'], 
                 job_config['weekdays_only']
