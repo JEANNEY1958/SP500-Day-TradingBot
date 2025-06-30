@@ -74,7 +74,10 @@ class ScheduleManager:
                     local_time += timedelta(days=1)
             # Conversion en UTC
             utc_time = local_time.astimezone(pytz.utc)
+            # Toujours forcer le format 24h pour la programmation (évite 11h/23h ambigu)
             time_str_utc = utc_time.strftime('%H:%M')
+            # Log détaillé pour vérification
+            self.logger.info(f"[PLANIFICATION] Heure locale demandée: {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} | Heure UTC calculée: {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} | String utilisée pour schedule: {time_str_utc} (24h)")
             
             job_config = {
                 'time_str': time_str,
