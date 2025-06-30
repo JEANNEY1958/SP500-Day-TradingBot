@@ -2248,6 +2248,7 @@ def stop_auto_schedule():
         return {'success': False, 'message': f'Erreur: {str(e)}'}
 
 def trigger_auto_threshold():
+    print("🔔🔔 [TRIGGER] >>>>>> Déclenchement automatique du mode seuil appelé <<<<<< 🔔🔔")
     """
     CORRECTION PRINCIPALE: Déclenche automatiquement le mode seuil ET le trading à l'heure programmée
     Cette fonction est appelée par le gestionnaire d'horaires selon l'heure configurée
