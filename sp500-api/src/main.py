@@ -627,25 +627,48 @@ def analyze_news_sentiment(symbol):
 
 # ===== FONCTIONS DE PLANIFICATION AUTOMATIQUE (CONSERVÉES) =====
 
+def convert_europe_paris_time_to_local(schedule_time_str):
+    """
+    Convertit une heure Europe/Paris ("HH:MM") en heure locale du serveur ("HH:MM").
+    """
+    import pytz
+    from datetime import datetime
+    europe_paris = pytz.timezone('Europe/Paris')
+    # Utilise le fuseau local du serveur
+    try:
+        import tzlocal
+        local_tz = tzlocal.get_localzone()
+    except ImportError:
+        import time
+        local_tz = pytz.timezone(time.tzname[0])
+    now_paris = datetime.now(europe_paris)
+    target_paris = europe_paris.localize(datetime.combine(now_paris.date(), datetime.strptime(schedule_time_str, "%H:%M").time()))
+    target_local = target_paris.astimezone(local_tz)
+    return target_local.strftime("%H:%M")
+
+
 def start_auto_schedule_500():
     """Démarre la planification automatique pour l'analyse des 500 tickers"""
     global schedule_job_500
     
     if system_status['schedule_500_enabled'] and system_status['schedule_500_time']:
         schedule_time = system_status['schedule_500_time']
-        print(f"⏰ Planification automatique 500 tickers: {schedule_time}")
+        print(f"⏰ Planification automatique 500 tickers (heure Europe/Paris): {schedule_time}")
+        schedule_time_local = convert_europe_paris_time_to_local(schedule_time)
+        print(f"⏰ Heure locale du serveur pour la planification: {schedule_time_local}")
         
         def auto_start_500():
-            print(f"🕐 Démarrage automatique de l'analyse des 500 tickers à {schedule_time}")
+            print(f"🕐 Démarrage automatique de l'analyse des 500 tickers à {schedule_time} (Europe/Paris) / {schedule_time_local} (local serveur)")
             if start_analysis_500():
                 print("✅ Analyse 500 démarrée automatiquement")
             else:
                 print("❌ Impossible de démarrer l'analyse 500 automatiquement")
         
-        # Programmer l'exécution quotidienne à l'heure spécifiée
-        schedule.every().day.at(schedule_time).do(auto_start_500)
+        # Programmer l'exécution quotidienne à l'heure locale correspondante
+        schedule.every().day.at(schedule_time_local).do(auto_start_500)
         schedule_job_500 = True
-        print(f"📅 Analyse 500 tickers programmée quotidiennement à {schedule_time}")
+        print(f"📅 Analyse 500 tickers programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_local} (local serveur)")
+
 
 def start_auto_schedule_10():
     """Démarre la planification automatique pour l'analyse des 10 finalistes"""
@@ -653,10 +676,12 @@ def start_auto_schedule_10():
     
     if system_status['schedule_10_enabled'] and system_status['schedule_10_time']:
         schedule_time = system_status['schedule_10_time']
-        print(f"⏰ Planification automatique 10 finalistes: {schedule_time}")
+        print(f"⏰ Planification automatique 10 finalistes (heure Europe/Paris): {schedule_time}")
+        schedule_time_local = convert_europe_paris_time_to_local(schedule_time)
+        print(f"⏰ Heure locale du serveur pour la planification: {schedule_time_local}")
         
         def auto_start_10():
-            print(f"🕐 Démarrage automatique de l'analyse des 10 finalistes à {schedule_time}")
+            print(f"🕐 Démarrage automatique de l'analyse des 10 finalistes à {schedule_time} (Europe/Paris) / {schedule_time_local} (local serveur)")
             # Vérifier qu'on a bien un Top 10 avant de lancer
             if system_status.get('phase') == 'completed_500' and system_status.get('top_10_candidates'):
                 if start_analysis_10():
@@ -666,10 +691,11 @@ def start_auto_schedule_10():
             else:
                 print("❌ Pas de Top 10 disponible pour l'analyse automatique")
         
-        # Programmer l'exécution quotidienne à l'heure spécifiée
-        schedule.every().day.at(schedule_time).do(auto_start_10)
+        # Programmer l'exécution quotidienne à l'heure locale correspondante
+        schedule.every().day.at(schedule_time_local).do(auto_start_10)
         schedule_job_10 = True
-        print(f"📅 Analyse 10 finalistes programmée quotidiennement à {schedule_time}")
+        print(f"📅 Analyse 10 finalistes programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_local} (local serveur)")
+
 
 def start_auto_schedule_sequence():
     """Démarre la séquence automatique avec horaires programmés"""
@@ -2767,6 +2793,14 @@ def check_score_threshold_before_trading(final_recommendation):
 if __name__ == '__main__':
     # CORRECTION: Démarrer le gestionnaire d'horaires automatiquement
     initialize_schedule_manager()
+    # Ajout : Planification du vidage automatique du cache chaque jour à minuit
+    schedule_manager.add_schedule(
+        time_str="00:00",
+        callback=daily_cache_cleanup,
+        job_id="daily_cache_cleanup",
+        weekdays_only=False,  # Tous les jours
+        enabled=True
+    )
     
     print("🚀 Démarrage de l'API S&P 500 Multi-Agents Complète V2 avec Trading Alpaca - VERSION CORRIGÉE")
     print(f"⚡ Polygon: {'✅' if os.getenv('POLYGON_API_KEY') else '❌'}")
