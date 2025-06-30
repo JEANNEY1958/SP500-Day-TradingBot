@@ -2287,22 +2287,48 @@ def trigger_auto_threshold():
         if ALPACA_AVAILABLE:
             # Utiliser la configuration pour déterminer si on attend la recommandation
             use_recommendation = system_status.get('equitable_mode', False)
-            fallback_symbol = 'SPY'  # Symbole par défaut pour le S&P 500
+            symbol = recommendation.get('symbol')
             
-            trading_result = trading_agent.start_auto_trading_with_recommendation(
-                use_recommendation=use_recommendation, 
-                fallback_symbol=fallback_symbol
-            )
+            # CORRECTION: Distinguer les deux modes
+            # Mode 1: Configuration Mode et Timer (auto_schedule_config)
+            # Mode 2: Configuration Mode Analyse Seuil (auto_threshold_config)
             
-            if trading_result.get('success', False):
-                print("✅ Trading automatique démarré en parallèle")
-                print(f"📊 Mode recommandation: {'Activé' if use_recommendation else 'Désactivé'}")
-                print(f"📈 Symbole de fallback: {fallback_symbol}")
+            if auto_schedule_config.get('enabled', False):
+                # Mode "Configuration Mode et Timer" - Envoie quel que soit le score
+                print(f"💰 Mode Timer: Envoi de la recommandation {symbol} au système de trading automatique")
+                result = trading_agent.start_auto_trading_with_recommendation(
+                    use_recommendation=True,
+                    symbol=symbol
+                )
+                if result['success']:
+                    print(f"✅ Trading automatique démarré pour {symbol}")
+                    # NOUVEAU: Marquer la recommandation comme traitée
+                    mark_recommendation_as_processed(recommendation)
+                else:
+                    print(f"❌ Erreur démarrage trading: {result['message']}")
+            elif auto_threshold_config.get('enabled', False):
+                # Mode "Configuration Mode Analyse Seuil" - Envoie seulement si score ≥ seuil
+                score = recommendation.get('score', 0)
+                target_score = auto_threshold_config.get('target_score', 70.0)
+                
+                if score >= target_score:
+                    print(f"💰 Mode Seuil: Envoi de la recommandation {symbol} au système de trading automatique")
+                    result = trading_agent.start_auto_trading_with_recommendation(
+                        use_recommendation=True,
+                        symbol=symbol
+                    )
+                    if result['success']:
+                        print(f"✅ Trading automatique démarré pour {symbol}")
+                        # NOUVEAU: Marquer la recommandation comme traitée
+                        mark_recommendation_as_processed(recommendation)
+                    else:
+                        print(f"❌ Erreur démarrage trading: {result['message']}")
+                else:
+                    print(f"🚫 Mode Seuil: Score {score}% < {target_score}% - Aucun envoi vers trading")
             else:
-                print(f"❌ Erreur démarrage trading automatique: {trading_result.get('message', 'Erreur inconnue')}")
+                print("ℹ️ Aucun mode automatique activé - recommandation disponible pour consultation")
         else:
-            print("⚠️ Module Alpaca Trading non disponible - analyse seulement")
-            
+            print("ℹ️ Mode manuel ou trading non disponible - recommandation disponible pour consultation")
     except Exception as e:
         print(f"❌ Erreur critique dans trigger_auto_threshold: {e}")
         import traceback
@@ -2499,8 +2525,8 @@ def _send_recommendation_to_trading(recommendation):
                 # Mode "Configuration Mode et Timer" - Envoie quel que soit le score
                 print(f"💰 Mode Timer: Envoi de la recommandation {symbol} au système de trading automatique")
                 result = trading_agent.start_auto_trading_with_recommendation(
-                    use_recommendation=False,
-                    fallback_symbol=symbol
+                    use_recommendation=True,
+                    symbol=symbol
                 )
                 if result['success']:
                     print(f"✅ Trading automatique démarré pour {symbol}")
@@ -2516,8 +2542,8 @@ def _send_recommendation_to_trading(recommendation):
                 if score >= target_score:
                     print(f"💰 Mode Seuil: Envoi de la recommandation {symbol} au système de trading automatique")
                     result = trading_agent.start_auto_trading_with_recommendation(
-                        use_recommendation=False,
-                        fallback_symbol=symbol
+                        use_recommendation=True,
+                        symbol=symbol
                     )
                     if result['success']:
                         print(f"✅ Trading automatique démarré pour {symbol}")
