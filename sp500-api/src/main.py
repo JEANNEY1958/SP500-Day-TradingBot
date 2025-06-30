@@ -1139,6 +1139,21 @@ def run_equitable_analysis_10():
             'last_update': datetime.now().isoformat()
         })
 
+# ===========================
+#         API ROUTES
+# ===========================
+
+@app.route('/api/debug/trigger-test', methods=['POST'])
+def debug_trigger_test():
+    """
+    Endpoint de debug pour déclencher manuellement trigger_auto_threshold
+    """
+    try:
+        trigger_auto_threshold()
+        return {"success": True, "message": "trigger_auto_threshold exécuté (voir log [TRIGGER])"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
 # ===== FONCTIONS UTILITAIRES =====
 
 # ===== VIDAGE QUOTIDIEN AUTOMATIQUE DU CACHE =====

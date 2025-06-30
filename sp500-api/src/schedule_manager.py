@@ -145,9 +145,9 @@ class ScheduleManager:
         try:
             self.running = True
             self.stop_event.clear()
-            self.scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=True)
+            self.scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=False)
             self.scheduler_thread.start()
-            self.logger.info("Gestionnaire d'horaires démarré")
+            self.logger.info("Gestionnaire d'horaires démarré (thread lancé, NON-daemon)")
             return True
         except Exception as e:
             self.logger.error(f"Erreur lors du démarrage du gestionnaire: {e}")
@@ -241,18 +241,19 @@ class ScheduleManager:
     def _run_scheduler(self):
         """Boucle principale du gestionnaire d'horaires"""
         self.logger.info("Boucle du gestionnaire d'horaires démarrée")
+        self.logger.info(f"[THREAD-START] Scheduler thread lancé à {datetime.now().isoformat()}")
         heartbeat_counter = 0
         while self.running and not self.stop_event.is_set():
             try:
                 schedule.run_pending()
-                time.sleep(1)  # Vérifier toutes les secondes
+                time.sleep(1)  
                 heartbeat_counter += 1
-                if heartbeat_counter >= 60:
+                if heartbeat_counter >= 5:
                     self.logger.info(f"[HEARTBEAT] Scheduler thread actif - {datetime.now().isoformat()}")
                     heartbeat_counter = 0
             except Exception as e:
                 self.logger.error(f"Erreur dans la boucle du gestionnaire: {e}")
-                time.sleep(5)  # Attendre avant de réessayer
+                time.sleep(5)  
         
         self.logger.info("Boucle du gestionnaire d'horaires arrêtée")
     
