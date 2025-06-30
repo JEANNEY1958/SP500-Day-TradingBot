@@ -83,7 +83,13 @@ class ScheduleManager:
             
             self.scheduled_jobs[job_id] = job_config
             
-            self.logger.info(f"Tâche programmée ajoutée: {job_id} à {time_str}")
+                        # Afficher l'heure locale et UTC pour clarté
+            if job_config['next_run'] is not None:
+                local_time = job_config['next_run']
+                utc_time = local_time.astimezone(pytz.utc)
+                self.logger.info(f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
+            else:
+                self.logger.info(f"Tâche programmée ajoutée: {job_id} à {time_str}")
             return True
             
         except Exception as e:
@@ -264,33 +270,33 @@ class ScheduleManager:
             return True
         except ValueError:
             return False
-    
+
     def _calculate_next_run(self, time_str: str, weekdays_only: bool) -> Optional[datetime]:
-        """Calcule la prochaine exécution d'une tâche"""
+        """Calcule la prochaine exécution d'une tâche en tenant compte du fuseau horaire local."""
         try:
-            now = datetime.now()
+            tz = pytz.timezone(self.timezone)
+            now = datetime.now(tz)
             time_parts = time_str.split(':')
             hour = int(time_parts[0])
             minute = int(time_parts[1])
-            
-            # Calculer la prochaine exécution aujourd'hui
+
+            # Calculer la prochaine exécution aujourd'hui en heure locale
             next_run = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-            
+
             # Si l'heure est déjà passée aujourd'hui, passer au jour suivant
             if next_run <= now:
                 next_run += timedelta(days=1)
-            
+
             # Si on ne veut que les jours de semaine, ajuster si nécessaire
             if weekdays_only:
                 while next_run.weekday() >= 5:  # 5 = samedi, 6 = dimanche
                     next_run += timedelta(days=1)
-            
+
             return next_run
-            
+
         except Exception as e:
             self.logger.error(f"Erreur lors du calcul de la prochaine exécution: {e}")
             return None
 
 # Instance globale du gestionnaire d'horaires
 schedule_manager = ScheduleManager()
-
