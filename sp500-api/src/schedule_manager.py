@@ -9,8 +9,32 @@ import threading
 import time
 from time_utils import now_belgium, now_belgium_isoformat
 import logging
+from datetime import datetime
 from typing import Dict, Callable, Optional, List
 from zoneinfo import ZoneInfo
+
+class BelgiumFormatter(logging.Formatter):
+    def converter(self, timestamp):
+        import pytz
+        dt = datetime.fromtimestamp(timestamp, pytz.timezone('Europe/Brussels'))
+        return dt
+
+    def formatTime(self, record, datefmt=None):
+        dt = self.converter(record.created)
+        if datefmt:
+            s = dt.strftime(datefmt)
+        else:
+            s = dt.isoformat()
+        return s
+
+handler = logging.StreamHandler()
+handler.setFormatter(BelgiumFormatter('%(asctime)s %(levelname)s %(message)s'))
+logging.getLogger().addHandler(handler)
+
+# Diagnostic au démarrage
+print('Belgium (Europe/Brussels):', now_belgium().strftime('%Y-%m-%d %H:%M:%S %Z%z'))
+import pytz
+print('UTC:', datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S %Z%z'))
 
 class ScheduleManager:
     def _now_be_str(self):
