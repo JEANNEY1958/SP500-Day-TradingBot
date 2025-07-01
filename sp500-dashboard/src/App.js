@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 
+// Fonction utilitaire pour formater l'heure
+function formatTime(timeString) {
+  // Si timeString est déjà au format "HH:mm", on retourne tel quel
+  if (typeof timeString === 'string' && /^\d{2}:\d{2}$/.test(timeString)) {
+    return timeString;
+  }
+  // Si c'est un objet Date, on formate
+  if (timeString instanceof Date) {
+    return timeString.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  return '';
+}
+
 // Configuration de l'URL de l'API
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://sp500-day-tradingbot.onrender.com"; // Utilise des guillemets simples ou doubles, pas de template string ici
 
