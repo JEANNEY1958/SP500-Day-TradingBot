@@ -7,7 +7,8 @@ Gère la planification automatique du mode seuil
 import schedule
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
+from zoneinfo import ZoneInfo, timedelta
 import logging
 from typing import Dict, Callable, Optional, List
 from zoneinfo import ZoneInfo
@@ -285,7 +286,7 @@ class ScheduleManager:
     def _run_scheduler(self):
         """Boucle principale du gestionnaire d'horaires"""
         self.logger.info(f"[{self._now_be_str()}] "+ "Boucle du gestionnaire d'horaires démarrée")
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[THREAD-START] Scheduler thread lancé à {datetime.now().isoformat()}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[THREAD-START] Scheduler thread lancé à {datetime.now(ZoneInfo("Europe/Brussels")).isoformat()}")
         heartbeat_counter = 0
         while self.running and not self.stop_event.is_set():
             try:
@@ -293,7 +294,7 @@ class ScheduleManager:
                 time.sleep(1)  
                 heartbeat_counter += 1
                 if heartbeat_counter >= 5:
-                    self.logger.info(f"[{self._now_be_str()}] "+ f"[HEARTBEAT] Scheduler thread actif - {datetime.now().isoformat()}")
+                    self.logger.info(f"[{self._now_be_str()}] "+ f"[HEARTBEAT] Scheduler thread actif - {datetime.now(ZoneInfo("Europe/Brussels")).isoformat()}")
                     heartbeat_counter = 0
             except Exception as e:
                 self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur dans la boucle du gestionnaire: {e}")
