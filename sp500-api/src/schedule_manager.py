@@ -15,6 +15,23 @@ from zoneinfo import ZoneInfo
 from zoneinfo import ZoneInfo
 
 class ScheduleManager:
+    def _now_be_str(self):
+        """Retourne l'heure belge actuelle formatée pour les logs"""
+        now_brussels = datetime.now(ZoneInfo('Europe/Brussels'))
+        return now_brussels.strftime('%Y-%m-%d %H:%M:%S %Z')
+
+    def _be_time_to_utc_str(self, time_str):
+        """Convertit une heure belge HH:MM en heure UTC HH:MM (pour schedule.at)"""
+        hour, minute = map(int, time_str.split(':'))
+        now = datetime.now(ZoneInfo('Europe/Brussels')).replace(hour=hour, minute=minute, second=0, microsecond=0)
+        utc_time = now.astimezone(ZoneInfo('UTC'))
+        return utc_time.strftime('%H:%M')
+
+    def _now_be_str(self):
+        """Retourne l'heure belge actuelle formatée pour les logs"""
+        now_brussels = datetime.now(ZoneInfo('Europe/Brussels'))
+        return now_brussels.strftime('%Y-%m-%d %H:%M:%S %Z')
+
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
     
     def __init__(self, timezone='Europe/Paris'):
@@ -36,9 +53,9 @@ class ScheduleManager:
         # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Paris)
         now_paris = datetime.now(ZoneInfo('Europe/Paris'))
         now_utc = datetime.utcnow()
-        self.logger.info(f"[TEST] Heure locale Europe/Paris au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-        self.logger.info(f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        self.logger.info(f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure locale Europe/Paris au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
@@ -58,7 +75,7 @@ class ScheduleManager:
         try:
             # Validation du format d'heure
             if not self._validate_time_format(time_str):
-                self.logger.error(f"Format d'heure invalide: {time_str}")
+                self.logger.error(f"[{self._now_be_str()}] "+ f"Format d'heure invalide: {time_str}")
                 return False
             
             # Supprimer la tâche existante si elle existe
@@ -89,15 +106,18 @@ class ScheduleManager:
                 'next_run': None
             }
             
-            # Programmer la tâche
+            # Conversion de l'heure belge en UTC pour la planification
+            utc_time_str = self._be_time_to_utc_str(time_str)
+            # Programmer la tâche avec l'heure UTC
             if weekdays_only:
-                job = schedule.every().monday.at(time_str).do(self._execute_job, job_id)
-                schedule.every().tuesday.at(time_str).do(self._execute_job, job_id)
-                schedule.every().wednesday.at(time_str).do(self._execute_job, job_id)
-                schedule.every().thursday.at(time_str).do(self._execute_job, job_id)
-                schedule.every().friday.at(time_str).do(self._execute_job, job_id)
+                job = schedule.every().monday.at(utc_time_str).do(self._execute_job, job_id)
+                schedule.every().tuesday.at(utc_time_str).do(self._execute_job, job_id)
+                schedule.every().wednesday.at(utc_time_str).do(self._execute_job, job_id)
+                schedule.every().thursday.at(utc_time_str).do(self._execute_job, job_id)
+                schedule.every().friday.at(utc_time_str).do(self._execute_job, job_id)
             else:
-                job = schedule.every().day.at(time_str).do(self._execute_job, job_id)
+                job = schedule.every().day.at(utc_time_str).do(self._execute_job, job_id)
+
             
             job_config['job'] = job
             job_config['next_run'] = self._calculate_next_run(time_str, weekdays_only)
@@ -108,13 +128,13 @@ class ScheduleManager:
             if job_config['next_run'] is not None:
                 local_time = job_config['next_run']
                 utc_time = local_time.astimezone(ZoneInfo('UTC'))
-                self.logger.info(f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
+                self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             else:
-                self.logger.info(f"Tâche programmée ajoutée: {job_id} à {time_str}")
+                self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche programmée ajoutée: {job_id} à {time_str}")
             return True
             
         except Exception as e:
-            self.logger.error(f"Erreur lors de l'ajout de la tâche {job_id}: {e}")
+            self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur lors de l'ajout de la tâche {job_id}: {e}")
             return False
     
     def remove_schedule(self, job_id: str) -> bool:
@@ -133,20 +153,20 @@ class ScheduleManager:
                 if job_config['job']:
                     schedule.cancel_job(job_config['job'])
                 del self.scheduled_jobs[job_id]
-                self.logger.info(f"Tâche supprimée: {job_id}")
+                self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche supprimée: {job_id}")
                 return True
             else:
-                self.logger.warning(f"Tâche non trouvée: {job_id}")
+                self.logger.warning(f"[{self._now_be_str()}] "+ f"Tâche non trouvée: {job_id}")
                 return False
         except Exception as e:
-            self.logger.error(f"Erreur lors de la suppression de la tâche {job_id}: {e}")
+            self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur lors de la suppression de la tâche {job_id}: {e}")
             return False
     
     def enable_schedule(self, job_id: str) -> bool:
         """Active une tâche programmée"""
         if job_id in self.scheduled_jobs:
             self.scheduled_jobs[job_id]['enabled'] = True
-            self.logger.info(f"Tâche activée: {job_id}")
+            self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche activée: {job_id}")
             return True
         return False
     
@@ -154,7 +174,7 @@ class ScheduleManager:
         """Désactive une tâche programmée"""
         if job_id in self.scheduled_jobs:
             self.scheduled_jobs[job_id]['enabled'] = False
-            self.logger.info(f"Tâche désactivée: {job_id}")
+            self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche désactivée: {job_id}")
             return True
         return False
     
@@ -166,7 +186,7 @@ class ScheduleManager:
             bool: True si le gestionnaire a été démarré avec succès
         """
         if self.running:
-            self.logger.warning("Le gestionnaire d'horaires est déjà en cours d'exécution")
+            self.logger.warning(f"[{self._now_be_str()}] "+ "Le gestionnaire d'horaires est déjà en cours d'exécution")
             return False
         
         try:
@@ -174,10 +194,10 @@ class ScheduleManager:
             self.stop_event.clear()
             self.scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=False)
             self.scheduler_thread.start()
-            self.logger.info("Gestionnaire d'horaires démarré (thread lancé, NON-daemon)")
+            self.logger.info(f"[{self._now_be_str()}] "+ "Gestionnaire d'horaires démarré (thread lancé, NON-daemon)")
             return True
         except Exception as e:
-            self.logger.error(f"Erreur lors du démarrage du gestionnaire: {e}")
+            self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur lors du démarrage du gestionnaire: {e}")
             self.running = False
             return False
     
@@ -189,7 +209,7 @@ class ScheduleManager:
             bool: True si le gestionnaire a été arrêté avec succès
         """
         if not self.running:
-            self.logger.warning("Le gestionnaire d'horaires n'est pas en cours d'exécution")
+            self.logger.warning(f"[{self._now_be_str()}] "+ "Le gestionnaire d'horaires n'est pas en cours d'exécution")
             return False
         
         try:
@@ -202,10 +222,10 @@ class ScheduleManager:
             # Nettoyer toutes les tâches programmées
             schedule.clear()
             
-            self.logger.info("Gestionnaire d'horaires arrêté")
+            self.logger.info(f"[{self._now_be_str()}] "+ "Gestionnaire d'horaires arrêté")
             return True
         except Exception as e:
-            self.logger.error(f"Erreur lors de l'arrêt du gestionnaire: {e}")
+            self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur lors de l'arrêt du gestionnaire: {e}")
             return False
     
     def get_status(self) -> Dict:
@@ -237,20 +257,20 @@ class ScheduleManager:
         """Exécute une tâche programmée"""
         try:
             if job_id not in self.scheduled_jobs:
-                self.logger.error(f"Tâche non trouvée: {job_id}")
+                self.logger.error(f"[{self._now_be_str()}] "+ f"Tâche non trouvée: {job_id}")
                 return
             
             job_config = self.scheduled_jobs[job_id]
             
             if not job_config['enabled']:
-                self.logger.info(f"Tâche désactivée, ignorée: {job_id}")
+                self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche désactivée, ignorée: {job_id}")
                 return
             
             # Log détaillé du déclenchement effectif
             now_local = datetime.now(ZoneInfo('Europe/Paris'))
             utc_time = now_local.astimezone(ZoneInfo('UTC'))
-            self.logger.info(f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
-            self.logger.info(f"Exécution de la tâche programmée: {job_id}")
+            self.logger.info(f"[{self._now_be_str()}] "+ f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
+            self.logger.info(f"[{self._now_be_str()}] "+ f"Exécution de la tâche programmée: {job_id}")
             
             # Mettre à jour l'heure de dernière exécution
             job_config['last_run'] = now_local
@@ -264,15 +284,15 @@ class ScheduleManager:
             if callback:
                 callback()
             
-            self.logger.info(f"Tâche exécutée avec succès: {job_id}")
+            self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche exécutée avec succès: {job_id}")
             
         except Exception as e:
-            self.logger.error(f"Erreur lors de l'exécution de la tâche {job_id}: {e}")
+            self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur lors de l'exécution de la tâche {job_id}: {e}")
     
     def _run_scheduler(self):
         """Boucle principale du gestionnaire d'horaires"""
-        self.logger.info("Boucle du gestionnaire d'horaires démarrée")
-        self.logger.info(f"[THREAD-START] Scheduler thread lancé à {datetime.now().isoformat()}")
+        self.logger.info(f"[{self._now_be_str()}] "+ "Boucle du gestionnaire d'horaires démarrée")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[THREAD-START] Scheduler thread lancé à {datetime.now().isoformat()}")
         heartbeat_counter = 0
         while self.running and not self.stop_event.is_set():
             try:
@@ -280,13 +300,13 @@ class ScheduleManager:
                 time.sleep(1)  
                 heartbeat_counter += 1
                 if heartbeat_counter >= 5:
-                    self.logger.info(f"[HEARTBEAT] Scheduler thread actif - {datetime.now().isoformat()}")
+                    self.logger.info(f"[{self._now_be_str()}] "+ f"[HEARTBEAT] Scheduler thread actif - {datetime.now().isoformat()}")
                     heartbeat_counter = 0
             except Exception as e:
-                self.logger.error(f"Erreur dans la boucle du gestionnaire: {e}")
+                self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur dans la boucle du gestionnaire: {e}")
                 time.sleep(5)  
         
-        self.logger.info("Boucle du gestionnaire d'horaires arrêtée")
+        self.logger.info(f"[{self._now_be_str()}] "+ "Boucle du gestionnaire d'horaires arrêtée")
     
     def _validate_time_format(self, time_str: str) -> bool:
         """Valide le format d'heure HH:MM"""
@@ -320,7 +340,7 @@ class ScheduleManager:
             return next_run
 
         except Exception as e:
-            self.logger.error(f"Erreur lors du calcul de la prochaine exécution: {e}")
+            self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur lors du calcul de la prochaine exécution: {e}")
             return None
 
 # Instance globale du gestionnaire d'horaires
