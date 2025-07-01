@@ -955,19 +955,6 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
     }
   };
 
-  // Fonction pour formater le temps
-  const formatTime = (isoString) => {
-    if (!isoString) return 'N/A';
-    return new Date(isoString).toLocaleTimeString('fr-FR');
-  };
-
-  // Fonction pour obtenir la couleur du score - SUPPRIMÉE car non utilisée
-  // const getScoreColor = (score) => {
-  //   if (score >= 80) return '#4CAF50'; // Vert
-  //   if (score >= 60) return '#FF9800'; // Orange
-  //   return '#F44336'; // Rouge
-  // };
-
   // Fonction pour obtenir la couleur de la recommandation
   const getRecommendationColor = (recommendation) => {
     if (!recommendation || typeof recommendation !== 'string') return '#FF9800'; // Orange par défaut
@@ -2084,63 +2071,3 @@ const autoSaveTradingConfig = useCallback(async (configToSave) => {
 }
 
 export default App;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
