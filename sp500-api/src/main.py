@@ -689,10 +689,10 @@ def start_auto_schedule_500():
             else:
                 print("❌ Impossible de démarrer l'analyse 500 automatiquement")
         
-        # Programmer l'exécution quotidienne à l'heure locale correspondante
-        schedule.every().day.at(schedule_time_utc).do(auto_start_500)
+        # Planification directe à l'heure souhaitée (Europe/Brussels/Paris)
+        schedule.every().day.at(schedule_time).do(auto_start_500)
         schedule_job_500 = True
-        print(f"📅 Analyse 500 tickers programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_utc} (UTC)")
+        print(f"📅 Analyse 500 tickers programmée quotidiennement à {schedule_time} (heure locale)")
 
 
 def start_auto_schedule_10():
@@ -716,10 +716,10 @@ def start_auto_schedule_10():
             else:
                 print("❌ Pas de Top 10 disponible pour l'analyse automatique")
         
-        # Programmer l'exécution quotidienne à l'heure locale correspondante
-        schedule.every().day.at(schedule_time_utc).do(auto_start_10)
+        # Planification directe à l'heure souhaitée (Europe/Brussels/Paris)
+        schedule.every().day.at(schedule_time).do(auto_start_10)
         schedule_job_10 = True
-        print(f"📅 Analyse 10 finalistes programmée quotidiennement à {schedule_time} (Europe/Paris) / {schedule_time_utc} (UTC)")
+        print(f"📅 Analyse 10 finalistes programmée quotidiennement à {schedule_time} (heure locale)")
 
 
 def start_auto_schedule_sequence():
