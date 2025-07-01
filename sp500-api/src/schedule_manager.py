@@ -20,12 +20,6 @@ class ScheduleManager:
         now_brussels = datetime.now(ZoneInfo('Europe/Brussels'))
         return now_brussels.strftime('%Y-%m-%d %H:%M:%S %Z')
 
-
-    def _now_be_str(self):
-        """Retourne l'heure belge actuelle formatée pour les logs"""
-        now_brussels = datetime.now(ZoneInfo('Europe/Brussels'))
-        return now_brussels.strftime('%Y-%m-%d %H:%M:%S %Z')
-
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
     
     def __init__(self, timezone='Europe/Paris'):
@@ -35,6 +29,8 @@ class ScheduleManager:
         Args:
             timezone (str): Fuseau horaire par défaut
         """
+        import os
+        import time as _time
         self.timezone = timezone
         self.scheduled_jobs = {}
         self.running = False
@@ -42,6 +38,12 @@ class ScheduleManager:
         self.stop_event = threading.Event()
         
         # Configuration du logging
+        print("[DEBUG] TZ variable:", os.environ.get("TZ"))
+        print("[DEBUG] time.tzname:", _time.tzname)
+        print("[DEBUG] System time:", _time.strftime('%Y-%m-%d %H:%M:%S'))
+        print("[DEBUG] Europe/Brussels:", datetime.now(ZoneInfo('Europe/Brussels')))
+        print("[DEBUG] UTC:", datetime.utcnow())
+
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Paris)
