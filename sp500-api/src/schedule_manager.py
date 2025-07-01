@@ -44,11 +44,7 @@ class ScheduleManager:
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Paris)
-        now_paris = now_belgium().astimezone(ZoneInfo('Europe/Paris'))
-        now_utc = now_belgium().astimezone(ZoneInfo('UTC'))
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure locale Europe/Paris au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        self.logger.info(f"[{self._now_be_str()}] [TEST] Heure belge Europe/Brussels au démarrage: {now_belgium_isoformat()}")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
@@ -116,11 +112,9 @@ class ScheduleManager:
             
             # Afficher l'heure locale et UTC pour clarté
             if job_config['next_run'] is not None:
-                local_time = job_config['next_run']
-                utc_time = local_time.astimezone(ZoneInfo('UTC'))
-                self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
+                self.logger.info(f"[{self._now_be_str()}] Tâche programmée ajoutée: {job_id} à {now_belgium_isoformat()} (heure belge)")
             else:
-                self.logger.info(f"[{self._now_be_str()}] "+ f"Tâche programmée ajoutée: {job_id} à {time_str}")
+                self.logger.info(f"[{self._now_be_str()}] Tâche programmée ajoutée: {job_id} à {time_str} (heure belge)")
             return True
             
         except Exception as e:
@@ -257,10 +251,8 @@ class ScheduleManager:
                 return
             
             # Log détaillé du déclenchement effectif
-            now_local = now_belgium().astimezone(ZoneInfo('Europe/Paris'))
-            utc_time = now_local.astimezone(ZoneInfo('UTC'))
-            self.logger.info(f"[{self._now_be_str()}] "+ f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
-            self.logger.info(f"[{self._now_be_str()}] "+ f"Exécution de la tâche programmée: {job_id}")
+            self.logger.info(f"[{self._now_be_str()}] [TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_belgium_isoformat()} (heure belge)")
+self.logger.info(f"[{self._now_be_str()}] Exécution de la tâche programmée: {job_id}")
             
             # Mettre à jour l'heure de dernière exécution
             job_config['last_run'] = now_local
