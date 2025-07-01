@@ -7,19 +7,15 @@ Gère la planification automatique du mode seuil
 import schedule
 import threading
 import time
-from datetime import datetime
-from zoneinfo import ZoneInfo, timedelta
+from time_utils import now_belgium, now_belgium_isoformat
 import logging
 from typing import Dict, Callable, Optional, List
-from zoneinfo import ZoneInfo
-
 from zoneinfo import ZoneInfo
 
 class ScheduleManager:
     def _now_be_str(self):
         """Retourne l'heure belge actuelle formatée pour les logs"""
-        now_brussels = datetime.now(ZoneInfo('Europe/Brussels'))
-        return now_brussels.strftime('%Y-%m-%d %H:%M:%S %Z')
+        return now_belgium().strftime('%Y-%m-%d %H:%M:%S %Z')
 
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
     
@@ -42,17 +38,17 @@ class ScheduleManager:
         print("[DEBUG] TZ variable:", os.environ.get("TZ"))
         print("[DEBUG] time.tzname:", _time.tzname)
         print("[DEBUG] System time:", _time.strftime('%Y-%m-%d %H:%M:%S'))
-        print("[DEBUG] Europe/Brussels:", datetime.now(ZoneInfo('Europe/Brussels')))
-        print("[DEBUG] UTC:", datetime.utcnow())
+        print("[DEBUG] Europe/Brussels:", now_belgium_isoformat())
+        print("[DEBUG] UTC:", now_belgium().astimezone(ZoneInfo('UTC')).strftime('%Y-%m-%d %H:%M:%S %Z'))
 
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Paris)
-        now_paris = datetime.now(ZoneInfo('Europe/Paris'))
-        now_utc = datetime.utcnow()
+        now_paris = now_belgium().astimezone(ZoneInfo('Europe/Paris'))
+        now_utc = now_belgium().astimezone(ZoneInfo('UTC'))
         self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure locale Europe/Paris au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
@@ -80,7 +76,7 @@ class ScheduleManager:
                 self.remove_schedule(job_id)
             
             # Prochaine occurrence de l'heure locale demandée (aujourd'hui ou demain)
-            now_local = datetime.now(ZoneInfo('Europe/Paris'))
+            now_local = now_belgium().astimezone(ZoneInfo('Europe/Paris'))
             hour, minute = map(int, time_str.split(':'))
             local_time = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if local_time <= now_local:
@@ -261,7 +257,7 @@ class ScheduleManager:
                 return
             
             # Log détaillé du déclenchement effectif
-            now_local = datetime.now(ZoneInfo('Europe/Paris'))
+            now_local = now_belgium().astimezone(ZoneInfo('Europe/Paris'))
             utc_time = now_local.astimezone(ZoneInfo('UTC'))
             self.logger.info(f"[{self._now_be_str()}] "+ f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             self.logger.info(f"[{self._now_be_str()}] "+ f"Exécution de la tâche programmée: {job_id}")
@@ -286,7 +282,7 @@ class ScheduleManager:
     def _run_scheduler(self):
         """Boucle principale du gestionnaire d'horaires"""
         self.logger.info(f"[{self._now_be_str()}] "+ "Boucle du gestionnaire d'horaires démarrée")
-        self.logger.info(f"[{self._now_be_str()}] "+ f"[THREAD-START] Scheduler thread lancé à {datetime.now(ZoneInfo("Europe/Brussels")).isoformat()}")
+        self.logger.info(f"[{self._now_be_str()}] "+ f"[THREAD-START] Scheduler thread lancé à {now_belgium_isoformat()}")
         heartbeat_counter = 0
         while self.running and not self.stop_event.is_set():
             try:
@@ -294,7 +290,7 @@ class ScheduleManager:
                 time.sleep(1)  
                 heartbeat_counter += 1
                 if heartbeat_counter >= 5:
-                    self.logger.info(f"[{self._now_be_str()}] "+ f"[HEARTBEAT] Scheduler thread actif - {datetime.now(ZoneInfo("Europe/Brussels")).isoformat()}")
+                    self.logger.info(f"[{self._now_be_str()}] "+ f"[HEARTBEAT] Scheduler thread actif - {now_belgium_isoformat()}")
                     heartbeat_counter = 0
             except Exception as e:
                 self.logger.error(f"[{self._now_be_str()}] "+ f"Erreur dans la boucle du gestionnaire: {e}")
@@ -305,7 +301,7 @@ class ScheduleManager:
     def _validate_time_format(self, time_str: str) -> bool:
         """Valide le format d'heure HH:MM"""
         try:
-            datetime.strptime(time_str, '%H:%M')
+            now_belgium().strftime(time_str, '%H:%M')
             return True
         except ValueError:
             return False

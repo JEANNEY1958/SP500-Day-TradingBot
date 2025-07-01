@@ -11,6 +11,7 @@ import time
 time.tzset()
 
 from flask import Flask, jsonify, request
+from time_utils import now_belgium, now_belgium_isoformat
 from flask_cors import CORS
 
 # Création de l'app Flask
@@ -89,7 +90,7 @@ warnings.filterwarnings('ignore')
 def validate_time_format(time_str):
     """Valide le format d'heure HH:MM"""
     try:
-        datetime.strptime(time_str, '%H:%M')
+        now_belgium().strftime('%H:%M')
         return True
     except ValueError:
         return False
@@ -517,7 +518,7 @@ def analyze_with_prices(symbol, prices, volumes, source):
             'macd': round(macd, 4),
             'volume': volumes[-1] if volumes else 0,
             'source': source,
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         }
         
     except Exception as e:
@@ -667,8 +668,8 @@ def convert_europe_paris_time_to_utc(schedule_time_str):
     from datetime import datetime, timedelta
     europe_paris = pytz.timezone('Europe/Paris')
     utc = pytz.utc
-    now_paris = datetime.now(europe_paris)
-    target_paris = europe_paris.localize(datetime.combine(now_paris.date(), datetime.strptime(schedule_time_str, "%H:%M").time()))
+    now_paris = now_belgium()
+    target_paris = europe_paris.localize(datetime.combine(now_paris.date(), now_belgium().strftime(schedule_time_str, "%H:%M").time()))
     # Si l'heure est déjà passée aujourd'hui, prendre demain
     if target_paris < now_paris:
         target_paris += timedelta(days=1)
@@ -820,7 +821,7 @@ def run_analysis_500():
             'running': True,
             'analyzed_stocks': 0,
             'total_stocks': len(symbols),
-            'start_time': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+            'start_time': now_belgium_isoformat(),
             'phase': 'analyzing_500'
         })
         
@@ -848,7 +849,7 @@ def run_analysis_500():
                 # Mise à jour du statut
                 system_status.update({
                     'analyzed_stocks': i + 1,
-                    'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                    'last_update': now_belgium_isoformat()
                 })
                 
                 # Pause entre analyses
@@ -865,7 +866,7 @@ def run_analysis_500():
         system_status.update({
             'running': False,
             'phase': 'completed_500',
-            'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+            'last_update': now_belgium_isoformat(),
             'top_10_candidates': top_10,
             'top_opportunities': results[:20]  # Top 20 pour affichage
         })
@@ -877,7 +878,7 @@ def run_analysis_500():
         system_status.update({
             'running': False,
             'phase': 'error',
-            'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'last_update': now_belgium_isoformat()
         })
 
 def run_equitable_analysis_500():
@@ -903,7 +904,7 @@ def run_equitable_analysis_500():
                     'analyzed_stocks': status.get('analyzed_stocks', 0),
                     'total_stocks': status.get('total_stocks', 500),
                     'phase': 'analyzing_500_equitable',
-                    'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                    'last_update': now_belgium_isoformat()
                 })
                 
                 time.sleep(2)  # Vérifier toutes les 2 secondes
@@ -920,7 +921,7 @@ def run_equitable_analysis_500():
                         'phase': 'completed_500_equitable',
                         'top_10_candidates': top_10_result['top_10'],
                         'diversity_metrics': diversity_metrics.__dict__ if diversity_metrics else None,
-                        'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                        'last_update': now_belgium_isoformat()
                     })
                     
                     print(f"✅ Analyse équitable terminée - Top 10 équitable sélectionné")
@@ -937,7 +938,7 @@ def run_equitable_analysis_500():
         system_status.update({
             'running': False,
             'phase': 'error',
-            'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'last_update': now_belgium_isoformat()
         })
 
 def run_analysis_10():
@@ -956,7 +957,7 @@ def run_analysis_10():
             'running': True,
             'analyzed_stocks': 0,
             'total_stocks': len(candidates),
-            'start_time': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+            'start_time': now_belgium_isoformat(),
             'phase': 'analyzing_10'
         })
         
@@ -992,7 +993,7 @@ def run_analysis_10():
                 # Mise à jour du statut
                 system_status.update({
                     'analyzed_stocks': i + 1,
-                    'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                    'last_update': now_belgium_isoformat()
                 })
                 
                 # Pause plus longue pour l'analyse approfondie
@@ -1029,7 +1030,7 @@ def run_analysis_10():
         system_status.update({
             'running': False,
             'phase': 'completed_10',
-            'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+            'last_update': now_belgium_isoformat(),
             'top_10_candidates': enhanced_results,
             'final_recommendation': final_recommendation
         })
@@ -1057,7 +1058,7 @@ def run_analysis_10():
         system_status.update({
             'running': False,
             'phase': 'error',
-            'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'last_update': now_belgium_isoformat()
         })
 
 def run_equitable_analysis_10():
@@ -1083,7 +1084,7 @@ def run_equitable_analysis_10():
                     'analyzed_stocks': status.get('analyzed_stocks', 0),
                     'total_stocks': status.get('total_stocks', 10),
                     'phase': 'analyzing_10_equitable',
-                    'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                    'last_update': now_belgium_isoformat()
                 })
                 
                 time.sleep(1)  # Vérifier toutes les secondes
@@ -1099,7 +1100,7 @@ def run_equitable_analysis_10():
                     'phase': 'completed_10_equitable',
                     'top_10_candidates': top_10_result.get('top_10', []),
                     'final_recommendation': final_result.get('recommendation'),
-                    'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                    'last_update': now_belgium_isoformat()
                 })
                 
                 print(f"✅ Analyse équitable approfondie terminée")
@@ -1139,7 +1140,7 @@ def run_equitable_analysis_10():
         system_status.update({
             'running': False,
             'phase': 'error',
-            'last_update': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'last_update': now_belgium_isoformat()
         })
 
 # ===========================
@@ -1168,21 +1169,21 @@ def daily_cache_cleanup():
     """
     try:
         print("🌙 VIDAGE QUOTIDIEN AUTOMATIQUE - Minuit US")
-        print(f"   Timestamp: {datetime.now(ZoneInfo("Europe/Brussels")).strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"   Timestamp: {now_belgium().strftime('%Y-%m-%d %H:%M:%S')}")
         # Utiliser la fonction existante de réinitialisation
         reset_analysis_data()
         print("✅ Cache vidé avec succès - Prêt pour le trading de demain")
         # Log pour traçabilité (optionnel)
         try:
             with open('cache_cleanup.log', 'a') as f:
-                f.write(f"{datetime.now(ZoneInfo("Europe/Brussels")).isoformat()} - Cache vidé automatiquement\n")
+                f.write(f"{now_belgium_isoformat()} - Cache vidé automatiquement\n")
         except:
             pass  # Ignore les erreurs de log
     except Exception as e:
         print(f"❌ Erreur lors du vidage quotidien: {e}")
         try:
             with open('cache_cleanup.log', 'a') as f:
-                f.write(f"{datetime.now(ZoneInfo("Europe/Brussels")).isoformat()} - ERREUR: {e}\n")
+                f.write(f"{now_belgium_isoformat()} - ERREUR: {e}\n")
         except:
             pass
 
@@ -1518,7 +1519,7 @@ def analyze_single_stock():
             return jsonify({
                 'success': True,
                 'analysis': result,
-                'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+                'timestamp': now_belgium_isoformat(),
                 'analysis_type': 'equitable' if system_status.get('equitable_mode', False) else 'standard'
             })
         else:
@@ -1538,7 +1539,7 @@ def health_check():
     """Vérification de santé de l'API"""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+        'timestamp': now_belgium_isoformat(),
         'version': '2.0.0',
         'features': {
             'polygon': bool(os.getenv('POLYGON_API_KEY')),
@@ -1571,14 +1572,14 @@ def configure_equitable_system():
             'success': result['success'],
             'message': result['message'],
             'configuration': result,
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         })
         
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e),
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         }), 500
 
 @app.route('/api/equitable/analyze/500', methods=['POST'])
@@ -1597,20 +1598,20 @@ def start_equitable_analysis_500():
                 'success': True,
                 'message': 'Analyse équitable des 500 tickers démarrée',
                 'analysis_type': 'Equitable Analysis V2',
-                'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                'timestamp': now_belgium_isoformat()
             })
         else:
             return jsonify({
                 'success': False,
                 'message': 'Analyse déjà en cours',
-                'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                'timestamp': now_belgium_isoformat()
             })
         
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e),
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         }), 500
 
 @app.route('/api/equitable/analyze/10', methods=['POST'])
@@ -1629,20 +1630,20 @@ def start_equitable_analysis_10():
                 'success': True,
                 'message': 'Analyse équitable approfondie des 10 finalistes démarrée',
                 'analysis_type': 'Deep Equitable Analysis V2',
-                'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                'timestamp': now_belgium_isoformat()
             })
         else:
             return jsonify({
                 'success': False,
                 'message': 'Analyse déjà en cours ou aucun candidat disponible',
-                'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                'timestamp': now_belgium_isoformat()
             })
         
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e),
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         }), 500
 
 @app.route('/api/equitable/diversity', methods=['GET'])
@@ -1658,7 +1659,7 @@ def get_diversity_metrics():
             return jsonify({
                 'success': False,
                 'message': 'Aucune métrique de diversité disponible',
-                'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+                'timestamp': now_belgium_isoformat()
             })
         
         return jsonify({
@@ -1676,14 +1677,14 @@ def get_diversity_metrics():
                     }
                 }
             },
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         })
         
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e),
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         }), 500
 
 @app.route('/api/equitable/performance', methods=['GET'])
@@ -1706,14 +1707,14 @@ def get_equitable_performance():
                     'total_analyses': performance_stats.get('total_analyses', 0)
                 }
             },
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         })
         
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e),
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         }), 500
 
 # ===== ENDPOINTS TRADING ALPACA (CONSERVÉS INTÉGRALEMENT) =====
@@ -2042,7 +2043,7 @@ def trigger_cache_cleanup():
         return jsonify({
             'success': True,
             'message': 'Vidage du cache déclenché manuellement',
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         })
     except Exception as e:
         return jsonify({
@@ -2059,7 +2060,7 @@ def refresh_cache():
         return jsonify({
             'success': True,
             'message': 'Cache rafraîchi avec succès',
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat(),
+            'timestamp': now_belgium_isoformat(),
             'status': {
                 'phase': system_status.get('phase'),
                 'top_10_count': len(system_status.get('top_10_candidates', [])),
@@ -2101,7 +2102,7 @@ def cache_info():
                 'running': system_status.get('running', False),
                 'equitable_mode': system_status.get('equitable_mode', False)
             },
-            'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'timestamp': now_belgium_isoformat()
         })
         
     except Exception as e:
@@ -2172,7 +2173,7 @@ def method_not_allowed(error):
         'success': False,
         'error': 'Méthode non autorisée',
         'message': 'Vérifiez la méthode HTTP utilisée',
-        'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+        'timestamp': now_belgium_isoformat()
     }), 405
 
 # ===== NOUVEAU SYSTÈME D'ANALYSE AUTOMATIQUE SEUIL 70% =====
@@ -2379,7 +2380,7 @@ def start_auto_threshold_analysis():
         'current_cycle': 0,
         'last_score': 0.0,
         'target_reached': False,  # CORRECTION: Réinitialiser le flag
-        'start_time': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+        'start_time': now_belgium_isoformat()
     })
     print(f"🎯 Démarrage analyse automatique seuil {auto_threshold_config['target_score']}%")
     print(f"📊 Maximum {auto_threshold_config['max_cycles']} cycles, délai {auto_threshold_config['delay_between_cycles']} min")
@@ -2616,7 +2617,7 @@ def get_auto_threshold_status():
     return jsonify({
         'success': True,
         'config': auto_threshold_config.copy(),
-        'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+        'timestamp': now_belgium_isoformat()
     })
 
 # ===== NOUVEAUX ENDPOINTS API POUR LE MODE AUTOMATIQUE AVEC HORLOGE =====
@@ -2636,7 +2637,7 @@ def get_auto_schedule_config():
     return jsonify({
         'success': True,
         'config': auto_schedule_config.copy(),
-        'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+        'timestamp': now_belgium_isoformat()
     })
 
 @app.route('/api/auto-schedule/enable', methods=['POST'])
@@ -2662,7 +2663,7 @@ def get_auto_schedule_status():
         'success': True,
         'config': auto_schedule_config.copy(),
         'scheduler': scheduler_status,
-        'timestamp': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+        'timestamp': now_belgium_isoformat()
     })
 
 @app.route('/api/auto-schedule/start', methods=['POST'])
@@ -2753,7 +2754,7 @@ def debug_schedule():
             'auto_schedule_config': auto_schedule_config.copy(),
             'auto_threshold_config': auto_threshold_config.copy(),
             'scheduled_jobs': schedule_manager.get_status()['jobs'] if schedule_manager.running else {},
-            'current_time': datetime.now(ZoneInfo("Europe/Brussels")).isoformat()
+            'current_time': now_belgium_isoformat()
         }
         
         return jsonify({
