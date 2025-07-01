@@ -12,11 +12,7 @@ import logging
 from typing import Dict, Callable, Optional, List
 from zoneinfo import ZoneInfo
 
-from datetime import timezone
-
-def get_paris_time():
-    # UTC+2 (heure d'été) en dur, pour forcer l'heure de Paris même si le serveur est en UTC
-    return datetime.now(timezone.utc) + timedelta(hours=2)
+from zoneinfo import ZoneInfo
 
 class ScheduleManager:
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
@@ -37,9 +33,12 @@ class ScheduleManager:
         # Configuration du logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        # Log de test pour vérifier l'heure locale réelle au démarrage (FORCÉE UTC+2)
-        now_paris = get_paris_time()
-        self.logger.info(f"[TEST] Heure Paris FORCÉE (UTC+2) au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S')} (Heure Paris attendue)")
+        # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Paris)
+        now_paris = datetime.now(ZoneInfo('Europe/Paris'))
+        now_utc = datetime.utcnow()
+        self.logger.info(f"[TEST] Heure locale Europe/Paris au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        self.logger.info(f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        self.logger.info(f"[TEST] Heure UTC système au démarrage: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
@@ -66,10 +65,9 @@ class ScheduleManager:
             if job_id in self.scheduled_jobs:
                 self.remove_schedule(job_id)
             
-            # Conversion locale -> UTC pour la programmation réelle
-            now_local = get_paris_time()
-            hour, minute = map(int, time_str.split(':'))
             # Prochaine occurrence de l'heure locale demandée (aujourd'hui ou demain)
+            now_local = datetime.now(ZoneInfo('Europe/Paris'))
+            hour, minute = map(int, time_str.split(':'))
             local_time = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if local_time <= now_local:
                 # Si on est juste avant l'heure (moins d'une minute), on prend aujourd'hui
@@ -80,45 +78,7 @@ class ScheduleManager:
                 else:
                     # Sinon, on prend le lendemain
                     local_time += timedelta(days=1)
-            # Conversion en UTC strict pour la programmation sur Render
-            utc_time = local_time.astimezone(pytz.utc)
-            time_str_utc = utc_time.strftime('%H:%M')  # Format 24h, UTC
-            # Log détaillé pour vérification (preuve conversion)
-            self.logger.info(f"[PLANIFICATION] Heure locale demandée: {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} | Heure UTC calculée: {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} | String UTC utilisée pour schedule: {time_str_utc} (24h, UTC, pour Render)")
             
-            job_config = {
-                'time_str': time_str,
-                'callback': callback,
-                'weekdays_only': weekdays_only,
-                'enabled': enabled,
-                'job': None,
-                'last_run': None,
-                'next_run': None
-            }
-            
-            # Programmer la tâche en UTC
-            if weekdays_only:
-                job = schedule.every().monday.at(time_str_utc).do(self._execute_job, job_id)
-                schedule.every().tuesday.at(time_str_utc).do(self._execute_job, job_id)
-                schedule.every().wednesday.at(time_str_utc).do(self._execute_job, job_id)
-                schedule.every().thursday.at(time_str_utc).do(self._execute_job, job_id)
-                schedule.every().friday.at(time_str_utc).do(self._execute_job, job_id)
-            else:
-                job = schedule.every().day.at(time_str_utc).do(self._execute_job, job_id)
-            
-            job_config['job'] = job
-            job_config['next_run'] = self._calculate_next_run(time_str, weekdays_only)
-            
-            self.scheduled_jobs[job_id] = job_config
-            
-            # Afficher l'heure locale et UTC pour clarté
-            self.logger.info(f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC) -> Programmation effective à {time_str_utc} UTC")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Erreur lors de l'ajout de la tâche {job_id}: {e}")
-            return False
-
             job_config = {
                 'time_str': time_str,
                 'callback': callback,
@@ -144,10 +104,10 @@ class ScheduleManager:
             
             self.scheduled_jobs[job_id] = job_config
             
-                        # Afficher l'heure locale et UTC pour clarté
+            # Afficher l'heure locale et UTC pour clarté
             if job_config['next_run'] is not None:
                 local_time = job_config['next_run']
-                utc_time = local_time.astimezone(pytz.utc)
+                utc_time = local_time.astimezone(ZoneInfo('UTC'))
                 self.logger.info(f"Tâche programmée ajoutée: {job_id} à {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             else:
                 self.logger.info(f"Tâche programmée ajoutée: {job_id} à {time_str}")
@@ -287,9 +247,9 @@ class ScheduleManager:
                 return
             
             # Log détaillé du déclenchement effectif
-            now_local = get_paris_time()
-            now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
-            self.logger.info(f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
+            now_local = datetime.now(ZoneInfo('Europe/Paris'))
+            utc_time = now_local.astimezone(ZoneInfo('UTC'))
+            self.logger.info(f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {utc_time.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             self.logger.info(f"Exécution de la tâche programmée: {job_id}")
             
             # Mettre à jour l'heure de dernière exécution
