@@ -8,9 +8,9 @@ import schedule
 import threading
 import time
 from datetime import datetime, timedelta
-import pytz
 import logging
 from typing import Dict, Callable, Optional, List
+from zoneinfo import ZoneInfo
 
 class ScheduleManager:
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
@@ -31,6 +31,10 @@ class ScheduleManager:
         # Configuration du logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+        # Log de test pour vérifier l'heure locale réelle au démarrage
+        tz_local = ZoneInfo(self.timezone)
+        now_local = datetime.now(tz_local)
+        self.logger.info(f"[TEST] Heure locale réelle au démarrage: {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')}")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
@@ -58,7 +62,7 @@ class ScheduleManager:
                 self.remove_schedule(job_id)
             
             # Conversion locale -> UTC pour la programmation réelle
-            tz_local = pytz.timezone(self.timezone)
+            tz_local = ZoneInfo(self.timezone)
             now_local = datetime.now(tz_local)
             hour, minute = map(int, time_str.split(':'))
             # Prochaine occurrence de l'heure locale demandée (aujourd'hui ou demain)
@@ -279,7 +283,7 @@ class ScheduleManager:
                 return
             
             # Log détaillé du déclenchement effectif
-            now_local = datetime.now(pytz.timezone(self.timezone))
+            now_local = datetime.now(ZoneInfo(self.timezone))
             now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
             self.logger.info(f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             self.logger.info(f"Exécution de la tâche programmée: {job_id}")
