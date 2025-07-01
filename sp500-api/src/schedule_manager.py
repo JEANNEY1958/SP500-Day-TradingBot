@@ -12,6 +12,12 @@ import logging
 from typing import Dict, Callable, Optional, List
 from zoneinfo import ZoneInfo
 
+from datetime import timezone
+
+def get_paris_time():
+    # UTC+2 (heure d'été) en dur, pour forcer l'heure de Paris même si le serveur est en UTC
+    return datetime.now(timezone.utc) + timedelta(hours=2)
+
 class ScheduleManager:
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
     
@@ -31,10 +37,9 @@ class ScheduleManager:
         # Configuration du logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        # Log de test pour vérifier l'heure locale réelle au démarrage
-        tz_local = ZoneInfo(self.timezone)
-        now_local = datetime.now(tz_local)
-        self.logger.info(f"[TEST] Heure locale réelle au démarrage: {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        # Log de test pour vérifier l'heure locale réelle au démarrage (FORCÉE UTC+2)
+        now_paris = get_paris_time()
+        self.logger.info(f"[TEST] Heure Paris FORCÉE (UTC+2) au démarrage: {now_paris.strftime('%Y-%m-%d %H:%M:%S')} (Heure Paris attendue)")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
@@ -62,8 +67,7 @@ class ScheduleManager:
                 self.remove_schedule(job_id)
             
             # Conversion locale -> UTC pour la programmation réelle
-            tz_local = ZoneInfo(self.timezone)
-            now_local = datetime.now(tz_local)
+            now_local = get_paris_time()
             hour, minute = map(int, time_str.split(':'))
             # Prochaine occurrence de l'heure locale demandée (aujourd'hui ou demain)
             local_time = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -283,7 +287,7 @@ class ScheduleManager:
                 return
             
             # Log détaillé du déclenchement effectif
-            now_local = datetime.now(ZoneInfo(self.timezone))
+            now_local = get_paris_time()
             now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
             self.logger.info(f"[TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} (local) / {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')} (UTC)")
             self.logger.info(f"Exécution de la tâche programmée: {job_id}")
