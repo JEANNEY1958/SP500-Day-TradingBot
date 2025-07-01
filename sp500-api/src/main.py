@@ -5,6 +5,11 @@ Version complète intégrant TOUTES les fonctionnalités existantes + améliorat
 FICHIER À COPIER/COLLER : sp500-api/src/main.py
 """
 
+import os
+os.environ["TZ"] = "Europe/Brussels"
+import time
+time.tzset()
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
