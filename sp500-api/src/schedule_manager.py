@@ -20,12 +20,6 @@ class ScheduleManager:
         now_brussels = datetime.now(ZoneInfo('Europe/Brussels'))
         return now_brussels.strftime('%Y-%m-%d %H:%M:%S %Z')
 
-    def _be_time_to_utc_str(self, time_str):
-        """Convertit une heure belge HH:MM en heure UTC HH:MM (pour schedule.at)"""
-        hour, minute = map(int, time_str.split(':'))
-        now = datetime.now(ZoneInfo('Europe/Brussels')).replace(hour=hour, minute=minute, second=0, microsecond=0)
-        utc_time = now.astimezone(ZoneInfo('UTC'))
-        return utc_time.strftime('%H:%M')
 
     def _now_be_str(self):
         """Retourne l'heure belge actuelle formatée pour les logs"""
@@ -106,19 +100,16 @@ class ScheduleManager:
                 'next_run': None
             }
             
-            # Conversion de l'heure belge en UTC pour la planification
-            utc_time_str = self._be_time_to_utc_str(time_str)
-            # Programmer la tâche avec l'heure UTC
+            # Planification directe à l'heure locale du système (Europe/Brussels)
             if weekdays_only:
-                job = schedule.every().monday.at(utc_time_str).do(self._execute_job, job_id)
-                schedule.every().tuesday.at(utc_time_str).do(self._execute_job, job_id)
-                schedule.every().wednesday.at(utc_time_str).do(self._execute_job, job_id)
-                schedule.every().thursday.at(utc_time_str).do(self._execute_job, job_id)
-                schedule.every().friday.at(utc_time_str).do(self._execute_job, job_id)
+                job = schedule.every().monday.at(time_str).do(self._execute_job, job_id)
+                schedule.every().tuesday.at(time_str).do(self._execute_job, job_id)
+                schedule.every().wednesday.at(time_str).do(self._execute_job, job_id)
+                schedule.every().thursday.at(time_str).do(self._execute_job, job_id)
+                schedule.every().friday.at(time_str).do(self._execute_job, job_id)
             else:
-                job = schedule.every().day.at(utc_time_str).do(self._execute_job, job_id)
+                job = schedule.every().day.at(time_str).do(self._execute_job, job_id)
 
-            
             job_config['job'] = job
             job_config['next_run'] = self._calculate_next_run(time_str, weekdays_only)
             
