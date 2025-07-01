@@ -252,10 +252,10 @@ class ScheduleManager:
             
             # Log détaillé du déclenchement effectif
             self.logger.info(f"[{self._now_be_str()}] [TRIGGER] Tâche {job_id} DÉCLENCHÉE à {now_belgium_isoformat()} (heure belge)")
-self.logger.info(f"[{self._now_be_str()}] Exécution de la tâche programmée: {job_id}")
+            self.logger.info(f"[{self._now_be_str()}] Exécution de la tâche programmée: {job_id}")
             
             # Mettre à jour l'heure de dernière exécution
-            job_config['last_run'] = now_local
+            job_config['last_run'] = now_belgium()
             job_config['next_run'] = self._calculate_next_run(
                 job_config['time_str'], 
                 job_config['weekdays_only']
@@ -302,7 +302,8 @@ self.logger.info(f"[{self._now_be_str()}] Exécution de la tâche programmée: {
         """Calcule la prochaine exécution d'une tâche en tenant compte du fuseau horaire local."""
         try:
             tz = pytz.timezone(self.timezone)
-            now = datetime.now(tz)
+            from time_utils import now_belgium
+            now = now_belgium()
             time_parts = time_str.split(':')
             hour = int(time_parts[0])
             minute = int(time_parts[1])
