@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Envs
+.env
+.env.*
+*.env
+*.envrc
+venv/
+.venv/
+
+# Node
+node_modules/
+
+# React
+build/
+
+# VSCode
+.vscode/
+
+# Mac/Linux/Windows
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Database
+mysql_data/
