@@ -25,7 +25,11 @@ from flask_cors import CORS
 
 # Création de l'app Flask
 app = Flask(__name__)
-CORS(app)
+CORS(
+    app,
+    origins=["https://sensational-pavlova-7f2b18.netlify.app"],
+    supports_credentials=True
+)
 
 # DEBUG Gunicorn: Afficher version Python et scikit-learn dans chaque worker
 import sys
@@ -104,7 +108,7 @@ except ImportError:
 
 # ===== CORRECTION DOUBLE ORDRE: VARIABLE DE CONTRÔLE =====
 # Désactive le déclencheur équitable pour éviter les doubles ordres
-DISABLE_EQUITABLE_TRIGGER = True
+DISABLE_EQUITABLE_TRIGGER = False
 print(f"🔧 Déclencheur équitable: {'DÉSACTIVÉ' if DISABLE_EQUITABLE_TRIGGER else 'ACTIVÉ'}")
 
 warnings.filterwarnings('ignore')
