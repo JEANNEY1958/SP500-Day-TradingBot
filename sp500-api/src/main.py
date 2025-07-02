@@ -27,6 +27,15 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+# DEBUG Gunicorn: Afficher version Python et scikit-learn dans chaque worker
+import sys
+print("PYTHON VERSION:", sys.version, flush=True)
+try:
+    import sklearn
+    print("✅ scikit-learn version:", sklearn.__version__, flush=True)
+except ImportError as e:
+    print("❌ ImportError sklearn:", e, flush=True)
+
 # Fonction pour relancer la planification automatique au démarrage (après crash/reboot Render)
 def auto_start_schedulers_on_boot():
     try:
