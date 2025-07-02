@@ -13,7 +13,7 @@ CORRECTIONS PRINCIPALES:
 """
 
 import alpaca_trade_api as tradeapi
-from datetime import datetime, timedelta, time
+from time_utils import now_belgium, now_belgium_isoformat, now_belgium_time, timedelta, time
 import pytz
 import threading
 import time as time_module
@@ -542,7 +542,7 @@ class AlpacaTradingAgent:
             if 'auto_sell_time' in config_updates:
                 # Valider le format HH:MM
                 try:
-                    datetime.strptime(config_updates['auto_sell_time'], '%H:%M')
+                    now_belgium().strftime('%H:%M')
                     self.config['auto_sell_time'] = config_updates['auto_sell_time']
                 except ValueError:
                     return {'success': False, 'message': 'Format d\'heure invalide (utilisez HH:MM)'}
@@ -705,10 +705,10 @@ class AlpacaTradingAgent:
             auto_sell_time = self.config.get('auto_sell_time', '15:50')
             
             # Parser l'heure de vente automatique
-            sell_time = datetime.strptime(auto_sell_time, '%H:%M').time()
+            sell_time = now_belgium().strftime('%H:%M').time()
             
             # Utiliser l'heure locale
-            current_time = datetime.now().time()
+            current_time = now_belgium_time()
             
             # Vendre si l'heure de vente automatique est atteinte
             if current_time >= sell_time:
@@ -934,7 +934,7 @@ def get_market_status() -> Dict:
         return {
             'success': True,
             'market_open': is_open,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': now_belgium_isoformat()
         }
     except Exception as e:
         return {'success': False, 'message': str(e)}
@@ -1099,7 +1099,7 @@ def get_current_price(symbol: str) -> Dict:
             'success': True,
             'symbol': symbol,
             'price': float(latest_trade.price),
-            'timestamp': latest_trade.timestamp.isoformat() if latest_trade.timestamp else None
+            'timestamp': now_belgium_isoformat() if latest_trade.timestamp else None
         }
         
     except Exception as e:

@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 
+// Fonction utilitaire pour convertir UTC vers heure belge
+function convertUTCToBelgium(utcTimestamp) {
+  const utcDate = new Date(utcTimestamp);
+  return utcDate.toLocaleString('fr-BE', {
+    timeZone: 'Europe/Brussels',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
 // Fonction utilitaire pour formater l'heure
 function formatTime(timeString) {
   // Si timeString est déjà au format "HH:mm", on retourne tel quel

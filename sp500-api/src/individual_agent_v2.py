@@ -9,7 +9,7 @@ import asyncio
 import time
 import json
 import logging
-from datetime import datetime, timedelta
+from time_utils import now_belgium, now_belgium_isoformat
 from typing import Dict, List, Optional, Tuple, Any, Union
 import pandas as pd
 import numpy as np
@@ -124,7 +124,7 @@ class AIAnalysisResult:
     
     # Métadonnées
     analysis_version: str = "V3_Complete"
-    timestamp: datetime = None
+    timestamp: str = now_belgium_isoformat()
 
 class TechnicalCalculator:
     """Calculateur d'indicateurs techniques sans TA-Lib (PRÉSERVÉ + AMÉLIORÉ)"""
@@ -137,8 +137,8 @@ class TechnicalCalculator:
                 return 50.0
             
             delta = prices.diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+            gain = (delta.where(delta > 0, 0)).rolling(window=period)
+            loss = (-delta.where(delta < 0, 0)).rolling(window=period)
             
             # Éviter division par zéro (amélioration V3)
             loss = loss.replace(0, 0.0001)
@@ -187,11 +187,11 @@ class TechnicalCalculator:
                 return 0.0, 0.0, 0.0
             
             # EMA rapide et lente
-            ema_fast = prices.ewm(span=fast).mean()
-            ema_slow = prices.ewm(span=slow).mean()
+            ema_fast = prices.ewm(span=fast)
+            ema_slow = prices.ewm(span=slow)
             
             # MACD Line
-            macd_line = ema_fast - ema_slow
+            macd_line = ema_fast.mean() - ema_slow.mean()
             
             # Signal Line
             signal_line = macd_line.ewm(span=signal).mean()
@@ -1012,7 +1012,7 @@ class AdvancedIndividualAgentV3:
                 'ai_analysis': asdict(ai_analysis),
                 'analysis_time': round(analysis_time, 2),
                 'analysis_version': 'V3_Complete',
-                'timestamp': datetime.now().isoformat()
+                'timestamp': now_belgium_isoformat()
             }
             
             self.logger.info(f"✅ Analyse V3 complète terminée pour {self.symbol} en {analysis_time:.2f}s")
@@ -1131,7 +1131,7 @@ class AdvancedIndividualAgentV3:
                 price_change = (prices.iloc[-1] - prices.iloc[-2]) / prices.iloc[-2]
                 vpt = round(volumes.iloc[-1] * price_change, 2)
             
-            # Patterns (préservé intégralement)
+            # Patterns (préservé)
             pattern, pattern_confidence = self.pattern_detector.detect_patterns(prices, volumes)
             
             # Support et Résistance
@@ -1270,7 +1270,7 @@ class AdvancedIndividualAgentV3:
                 recommendation=recommendation,
                 confidence=confidence,
                 reasoning=reasoning,
-                timestamp=datetime.now()
+                timestamp=now_belgium().strftime("%Y-%m-%d %H:%M:%S")
             )
             
         except Exception as e:
@@ -1294,7 +1294,7 @@ class AdvancedIndividualAgentV3:
                 recommendation="HOLD",
                 confidence=0.5,
                 reasoning=["Analyse par défaut"],
-                timestamp=datetime.now()
+                timestamp=now_belgium().strftime("%Y-%m-%d %H:%M:%S")
             )
     
     # TOUTES LES MÉTHODES ORIGINALES PRÉSERVÉES

@@ -9,7 +9,7 @@ import asyncio
 import time
 import json
 import logging
-from datetime import datetime, timedelta
+from time_utils import now_belgium, now_belgium_isoformat
 from typing import Dict, List, Optional, Tuple, Any
 import pandas as pd
 import numpy as np
@@ -61,7 +61,7 @@ class EquitableAnalysisResult:
     
     # Métadonnées
     source: str
-    timestamp: datetime
+    timestamp: str = now_belgium_isoformat()
     analysis_version: str
     
     # NOUVEAU V3 - avec valeurs par défaut (DOIT être à la fin)
@@ -532,7 +532,7 @@ class AdvancedCentralOrchestratorV3:
             
             # Configuration du mode
             self.status.mode = mode
-            self.status.last_update = datetime.now().isoformat()
+            self.status.last_update = now_belgium_isoformat()
             
             # Configuration de la diversité
             if diversity_settings:
@@ -563,8 +563,8 @@ class AdvancedCentralOrchestratorV3:
             # Estimation du temps restant
             estimated_remaining = "N/A"
             if self.status.running and self.status.start_time and self.status.analyzed_stocks > 0:
-                start_time = datetime.fromisoformat(self.status.start_time)
-                elapsed_time = (datetime.now() - start_time).total_seconds()
+                start_time = now_belgium()
+                elapsed_time = (now_belgium() - start_time).total_seconds()
                 avg_time_per_stock = elapsed_time / self.status.analyzed_stocks
                 remaining_stocks = self.status.total_stocks - self.status.analyzed_stocks
                 estimated_remaining = f"{int(remaining_stocks * avg_time_per_stock / 60)} minutes"
@@ -652,7 +652,7 @@ class AdvancedCentralOrchestratorV3:
             self.status.phase = 'analyzing_500'
             self.status.analyzed_stocks = 0
             self.status.total_stocks = len(self.sp500_symbols)
-            self.status.start_time = datetime.now().isoformat()
+            self.status.start_time = now_belgium_isoformat()
             self.status.analysis_results_500 = []
             self.status.successful_analyses = 0
             self.status.error_count = 0
@@ -685,7 +685,7 @@ class AdvancedCentralOrchestratorV3:
             self.status.phase = 'analyzing_500_precise'
             self.status.analyzed_stocks = 0
             self.status.total_stocks = len(self.sp500_symbols)
-            self.status.start_time = datetime.now().isoformat()
+            self.status.start_time = now_belgium_isoformat()
             self.status.analysis_results_500 = []
             self.status.successful_analyses = 0
             self.status.error_count = 0
@@ -738,7 +738,7 @@ class AdvancedCentralOrchestratorV3:
                 self.status.analyzed_stocks = len(self.status.analysis_results_500)
                 
                 # Mise à jour du statut
-                self.status.last_update = datetime.now().isoformat()
+                self.status.last_update = now_belgium_isoformat()
                 
                 # Calcul du score moyen
                 if self.status.analysis_results_500:
@@ -758,7 +758,7 @@ class AdvancedCentralOrchestratorV3:
             total_time = time.time() - start_time
             self.status.running = False
             self.status.phase = 'completed'
-            self.status.last_update = datetime.now().isoformat()
+            self.status.last_update = now_belgium_isoformat()
             
             self.logger.info(f"✅ Analyse équitable terminée en {total_time:.1f}s")
             self.logger.info(f"📊 {len(self.status.analysis_results_500)} actions analysées avec succès")
@@ -771,7 +771,7 @@ class AdvancedCentralOrchestratorV3:
             self.logger.error(f"❌ Erreur critique analyse équitable 500: {e}")
             self.status.running = False
             self.status.phase = 'error'
-            self.status.last_update = datetime.now().isoformat()
+            self.status.last_update = now_belgium_isoformat()
     
     def _run_precise_analysis_500_background(self):
         """Exécute l'analyse précise V3 des 500 tickers en arrière-plan (NOUVEAU)"""
@@ -813,7 +813,7 @@ class AdvancedCentralOrchestratorV3:
                     quintile_stats[result.quintile_rank] = quintile_stats.get(result.quintile_rank, 0) + 1
                 
                 # Mise à jour du statut
-                self.status.last_update = datetime.now().isoformat()
+                self.status.last_update = now_belgium_isoformat()
                 
                 # Calcul du score moyen précis
                 if self.status.analysis_results_500:
@@ -833,7 +833,7 @@ class AdvancedCentralOrchestratorV3:
             total_time = time.time() - start_time
             self.status.running = False
             self.status.phase = 'completed_precise'
-            self.status.last_update = datetime.now().isoformat()
+            self.status.last_update = now_belgium_isoformat()
             
             self.logger.info(f"✅ Analyse précise V3 terminée en {total_time:.1f}s")
             self.logger.info(f"📊 {len(self.status.analysis_results_500)} actions analysées avec succès")
@@ -847,7 +847,7 @@ class AdvancedCentralOrchestratorV3:
             self.logger.error(f"❌ Erreur critique analyse précise V3: {e}")
             self.status.running = False
             self.status.phase = 'error'
-            self.status.last_update = datetime.now().isoformat()
+            self.status.last_update = now_belgium_isoformat()
     
     async def _analyze_batch_equitable(self, symbols: List[str]) -> List[EquitableAnalysisResult]:
         """Analyse un lot de symboles avec le système équitable (PRÉSERVÉ INTÉGRALEMENT)"""
@@ -978,7 +978,7 @@ class AdvancedCentralOrchestratorV3:
                 
                 # Métadonnées
                 source='Advanced Equitable System V2',
-                timestamp=datetime.now(),
+                timestamp=now_belgium(),
                 analysis_version=analysis_result.get('analysis_version', 'V2')
             )
             
@@ -1033,7 +1033,7 @@ class AdvancedCentralOrchestratorV3:
                 
                 # Métadonnées
                 source='Advanced Precise System V3',
-                timestamp=datetime.now(),
+                timestamp=now_belgium(),
                 analysis_version=analysis_result.get('analysis_version', 'V3_Complete')
             )
             
@@ -1428,7 +1428,7 @@ class AdvancedCentralOrchestratorV3:
             self.stop_flag = True
             self.status.running = False
             self.status.phase = 'stopped'
-            self.status.last_update = datetime.now().isoformat()
+            self.status.last_update = now_belgium_isoformat()
             
             self.logger.info("🛑 Analyse arrêtée par l'utilisateur")
             
