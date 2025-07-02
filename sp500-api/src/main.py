@@ -25,11 +25,6 @@ from flask_cors import CORS
 
 # Création de l'app Flask
 app = Flask(__name__)
-CORS(
-    app,
-    origins=["https://sensational-pavlova-7f2b18.netlify.app"],
-    supports_credentials=True
-)
 
 # DEBUG Gunicorn: Afficher version Python et scikit-learn dans chaque worker
 import sys
@@ -144,11 +139,11 @@ if os.path.exists(env_file_path):
 else:
     print(f"⚠️ Fichier .env non trouvé: {env_file_path}")
 
-# Configuration Flask
+# Création de l'app Flask
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 
-# Configuration CORS pour Render + Netlify
+# Configuration CORS pour Render + Netlify (unique et correcte)
 CORS(app, origins=[
     'http://localhost:3000',  # Pour le développement local
     'http://localhost:3001',  # Pour le développement local

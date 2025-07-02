@@ -16,6 +16,7 @@ function formatTime(timeString) {
 
 // Configuration de l'URL de l'API
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://sp500-day-tradingbot.onrender.com"; // Utilise des guillemets simples ou doubles, pas de template string ici
+console.log("API_BASE_URL utilisé :", API_BASE_URL);
 
 /*
 FICHIER À COPIER/COLLER : sp500-dashboard/src/App.js
