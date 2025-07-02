@@ -7,7 +7,7 @@ textblob>=0.17.0
 schedule>=1.2.0
 
 # Dépendances pour le machine learning (système équitable V3)
-scikit-learn>=1.3.0
+scikit-learn>=1.6.1
 joblib>=1.3.0
 
 # Dépendances pour Flask et API
