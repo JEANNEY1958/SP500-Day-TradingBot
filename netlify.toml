@@ -1,6 +1,7 @@
 [build]
-publish = "sp500-dashboard/build"
-command = "cd sp500-dashboard && npm ci && npm run build"
+base = "sp500-dashboard"
+command = "npm run build"
+publish = "build"
 
 [build.environment]
 NODE_VERSION = "20"
