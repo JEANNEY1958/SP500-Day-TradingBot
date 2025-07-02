@@ -65,13 +65,37 @@ from schedule_manager import schedule_manager
 
 # Import des nouveaux modules améliorés (avec fallback si non disponibles)
 try:
+    # SOLUTION IMMÉDIATE: Installation automatique de sklearn
+    try:
+        import sklearn
+        print("✅ scikit-learn détecté")
+    except ImportError:
+        print("🔧 Installation automatique de scikit-learn...")
+        import subprocess
+        import sys
+        import os
+        # Installer scikit-learn et joblib
+        try:
+            subprocess.check_call([
+                sys.executable, "-m", "pip", "install",
+                "scikit-learn==1.3.0", "joblib==1.3.0"
+            ], timeout=180)
+            print("✅ scikit-learn installé avec succès")
+            # Forcer le rechargement des modules
+            import importlib
+            import sklearn
+        except Exception as install_error:
+            print(f"❌ Échec installation: {install_error}")
+            raise ImportError("Installation automatique échouée")
+    # Importer les modules du système équitable
     from individual_agent_v2 import AdvancedIndividualAgentV3, create_advanced_agent, analyze_symbol_advanced
     from central_orchestrator import AdvancedCentralOrchestratorV3, create_advanced_orchestrator
     EQUITABLE_SYSTEM_AVAILABLE = True
-    print("✅ Système équitable V3 chargé")
+    print("✅ Système équitable V3 chargé avec succès")
 except ImportError as e:
     EQUITABLE_SYSTEM_AVAILABLE = False
     print(f"⚠️ Système équitable V3 non disponible: {e}")
+    print("🔄 Application fonctionnera en mode analyse standard")
 
 # Import du module de trading Alpaca CORRIGÉ
 try:
