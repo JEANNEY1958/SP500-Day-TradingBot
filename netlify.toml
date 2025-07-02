@@ -1,0 +1,19 @@
+[build]
+publish = "sp500-dashboard/build"
+command = "cd sp500-dashboard && npm ci && npm run build"
+
+[build.environment]
+NODE_VERSION = "20"
+NPM_VERSION = "10"
+REACT_APP_API_URL = "https://sp500-trading-bot-api.onrender.com"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+[context.production.environment]
+REACT_APP_API_URL = "https://sp500-trading-bot-api.onrender.com"
+
+[context.deploy-preview.environment]
+REACT_APP_API_URL = "https://sp500-trading-bot-api-staging.onrender.com"
