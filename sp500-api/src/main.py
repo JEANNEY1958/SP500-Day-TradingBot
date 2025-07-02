@@ -5,6 +5,7 @@ Version complète intégrant TOUTES les fonctionnalités existantes + améliorat
 FICHIER À COPIER/COLLER : sp500-api/src/main.py
 """
 
+import timezone_patch  # DOIT ÊTRE LE PREMIER IMPORT
 import os
 os.environ["TZ"] = "Europe/Brussels"
 import time

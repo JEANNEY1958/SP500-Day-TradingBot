@@ -43,7 +43,7 @@ class ScheduleManager:
 
     """Gestionnaire d'horaires pour le déclenchement automatique du mode seuil"""
     
-    def __init__(self, timezone='Europe/Paris'):
+    def __init__(self, timezone='Europe/Brussels'):
         """
         Initialise le gestionnaire d'horaires
         
@@ -67,16 +67,16 @@ class ScheduleManager:
 
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Paris)
+        # Log de test pour vérifier l'heure locale réelle au démarrage (Europe/Brussels)
         self.logger.info(f"[{self._now_be_str()}] [TEST] Heure belge Europe/Brussels au démarrage: {now_belgium_isoformat()}")
         
     def add_schedule(self, time_str: str, callback: Callable, job_id: str, 
                     weekdays_only: bool = True, enabled: bool = True) -> bool:
         """
-        Ajoute une tâche programmée (heure locale Europe/Paris, programmation réelle en UTC)
+        Ajoute une tâche programmée (heure locale Europe/Brussels, programmation réelle en UTC)
         
         Args:
-            time_str (str): Heure au format "HH:MM" (heure locale Europe/Paris)
+            time_str (str): Heure au format "HH:MM" (heure locale Europe/Brussels)
             callback (Callable): Fonction à exécuter
             job_id (str): Identifiant unique de la tâche
             weekdays_only (bool): Exécuter seulement les jours de semaine
@@ -96,7 +96,7 @@ class ScheduleManager:
                 self.remove_schedule(job_id)
             
             # Prochaine occurrence de l'heure locale demandée (aujourd'hui ou demain)
-            now_local = now_belgium().astimezone(ZoneInfo('Europe/Paris'))
+            now_local = now_belgium().astimezone(ZoneInfo('Europe/Brussels'))
             hour, minute = map(int, time_str.split(':'))
             local_time = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if local_time <= now_local:
