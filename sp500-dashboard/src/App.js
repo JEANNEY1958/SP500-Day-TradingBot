@@ -3,6 +3,10 @@ import './App.css';
 
 // Fonction utilitaire pour formater l'heure
 function formatTime(timeString) {
+  // Si timeString est null, undefined ou vide, retourner chaîne vide
+  if (!timeString) {
+    return '';
+  }
   // Si timeString est déjà au format "HH:mm", on retourne tel quel
   if (typeof timeString === 'string' && /^\d{2}:\d{2}$/.test(timeString)) {
     return timeString;
@@ -10,6 +14,18 @@ function formatTime(timeString) {
   // Si c'est un objet Date, on formate
   if (timeString instanceof Date) {
     return timeString.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  // CORRECTION: Si c'est une chaîne au format ISO datetime
+  if (typeof timeString === 'string') {
+    try {
+      const date = new Date(timeString);
+      // Vérifier que la date est valide
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (error) {
+      console.warn('Erreur lors du parsing de la date:', timeString, error);
+    }
   }
   return '';
 }
