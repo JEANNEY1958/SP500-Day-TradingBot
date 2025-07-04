@@ -200,7 +200,7 @@ system_status = {
     'analyzed_stocks': 0,
     'total_stocks': 0,
     'start_time': None,
-    'last_update': None,
+    'last_update': now_belgium_isoformat(),  # Initialiser avec l'heure actuelle au lieu de None
     'top_opportunities': [],
     'mode': 'manual',  # 'manual' ou 'auto'
     'auto_timer_500': 0,  # Timer pour analyse 500 tickers (en minutes) - DEPRECATED
@@ -1249,7 +1249,7 @@ def reset_analysis_data():
         'analyzed_stocks': 0,
         'total_stocks': 0,
         'start_time': None,
-        'last_update': None,
+        'last_update': now_belgium_isoformat(),  # Mettre à jour avec l'heure actuelle au lieu de None
         'top_opportunities': [],
         'phase': 'idle',
         'top_10_candidates': [],

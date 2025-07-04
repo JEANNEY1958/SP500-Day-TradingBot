@@ -21,6 +21,6 @@ def patched_now(tz=None):
     return _original_now(tz)
 
 # Remplacer globalement
-datetime.datetime.now = patched_now
+# datetime.datetime.now = patched_now  # Commenté pour éviter l'erreur d'immutabilité
 
 print(f"🕐 PATCH FUSEAU HORAIRE APPLIQUÉ - Heure: {datetime.datetime.now().strftime('%H:%M:%S %Z')}")
